@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Endurance Bolão - Copa do Mundo 2026</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <header>
+        <div class="header-content">
+            <h1>⚽ Endurance Bolão</h1>
+            <p class="subtitle">Copa do Mundo 2026 - Fase de Grupos</p>
+        </div>
+    </header>
+
+    <nav id="main-nav">
+        <button class="nav-btn active" data-page="ranking">🏆 Classificação</button>
+        <button class="nav-btn" data-page="new-bet">📝 Criar Palpites</button>
+        <button class="nav-btn" data-page="view-bet">🔍 Ver/Editar Palpites</button>
+        <button class="nav-btn" data-page="admin">⚙️ Admin</button>
+    </nav>
+
+    <main id="app">
+        <!-- PÁGINA: CLASSIFICAÇÃO -->
+        <section id="page-ranking" class="page active">
+            <h2>🏆 Classificação Geral</h2>
+            <div id="ranking-container">
+                <p class="loading">Carregando classificação...</p>
+            </div>
+        </section>
+
+        <!-- PÁGINA: CRIAR PALPITES -->
+        <section id="page-new-bet" class="page">
+            <h2>📝 Criar Seus Palpites</h2>
+            <div id="deadline-warning" class="warning hidden">
+                ⚠️ O prazo para envio de palpites encerrou em 10/06/2026.
+            </div>
+            <div id="new-bet-form">
+                <div class="form-group">
+                    <label for="player-name">Seu Nome:</label>
+                    <input type="text" id="player-name" placeholder="Digite seu nome" maxlength="50">
+                </div>
+                <div id="matches-container"></div>
+                <button id="btn-save-bets" class="btn-primary">💾 Salvar Palpites</button>
+            </div>
+            <div id="code-result" class="hidden">
+                <div class="code-card">
+                    <h3>✅ Palpites salvos com sucesso!</h3>
+                    <p>Seu código de acesso é:</p>
+                    <div class="code-display" id="user-code"></div>
+                    <p class="code-warning">⚠️ ANOTE ESTE CÓDIGO! Você precisará dele para ver ou alterar seus palpites.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- PÁGINA: VER/EDITAR PALPITES -->
+        <section id="page-view-bet" class="page">
+            <h2>🔍 Ver / Editar Palpites</h2>
+            <div id="login-form">
+                <div class="form-group">
+                    <label for="access-code">Código de Acesso (6 caracteres):</label>
+                    <input type="text" id="access-code" placeholder="Ex: A3B7K9" maxlength="6" style="text-transform: uppercase;">
+                </div>
+                <button id="btn-load-bets" class="btn-primary">🔓 Carregar Palpites</button>
+            </div>
+            <div id="edit-container" class="hidden">
+                <div class="user-info-card">
+                    <span id="edit-user-name"></span>
+                    <span id="edit-user-code"></span>
+                    <span id="edit-user-points"></span>
+                </div>
+                <div id="edit-matches-container"></div>
+                <button id="btn-update-bets" class="btn-primary hidden">💾 Atualizar Palpites</button>
+            </div>
+        </section>
+
+        <!-- PÁGINA: ADMIN (inserir resultados reais) -->
+        <section id="page-admin" class="page">
+            <h2>⚙️ Administração - Resultados Reais</h2>
+            <div id="admin-login">
+                <div class="form-group">
+                    <label for="admin-pass">Senha do Admin:</label>
+                    <input type="password" id="admin-pass" placeholder="Digite a senha">
+                </div>
+                <button id="btn-admin-login" class="btn-primary">🔐 Entrar</button>
+            </div>
+            <div id="admin-panel" class="hidden">
+                <p class="info-text">Insira os resultados reais dos jogos para calcular a pontuação dos participantes.</p>
+                <div id="admin-matches-container"></div>
+                <button id="btn-save-results" class="btn-primary">💾 Salvar Resultados e Recalcular Pontos</button>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <p>Endurance Bolão © 2026 | Copa do Mundo FIFA 2026</p>
+    </footer>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+
+    <!-- App Scripts -->
+    <script src="js/matches-data.js"></script>
+    <script src="js/firebase-config.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>

@@ -98,21 +98,27 @@ const MATCHES_DATA = [
     { id: 68, group: "L", matchday: 3, date: "2026-06-27", team1: "Croácia", team2: "Gana", city: "Philadelphia", stadium: "Lincoln Financial Field" }
 ];
 
-// Bandeiras dos países (emoji flags)
+// Códigos ISO dos países para bandeiras via flagcdn.com
 const TEAM_FLAGS = {
-    "México": "🇲🇽", "África do Sul": "🇿🇦", "Coreia do Sul": "🇰🇷", "República Tcheca": "🇨🇿",
-    "Canadá": "🇨🇦", "Bósnia e Herzegovina": "🇧🇦", "Qatar": "🇶🇦", "Suíça": "🇨🇭",
-    "Brasil": "🇧🇷", "Marrocos": "🇲🇦", "Haiti": "🇭🇹", "Escócia": "🏴󠁧󠁢󠁳󠁣󠁴󠁿",
-    "Estados Unidos": "🇺🇸", "Paraguai": "🇵🇾", "Austrália": "🇦🇺", "Turquia": "🇹🇷",
-    "Alemanha": "🇩🇪", "Curaçao": "🇨🇼", "Costa do Marfim": "🇨🇮", "Equador": "🇪🇨",
-    "Holanda": "🇳🇱", "Japão": "🇯🇵", "Suécia": "🇸🇪", "Tunísia": "🇹🇳",
-    "Bélgica": "🇧🇪", "Egito": "🇪🇬", "Irã": "🇮🇷", "Nova Zelândia": "🇳🇿",
-    "Espanha": "🇪🇸", "Cabo Verde": "🇨🇻", "Arábia Saudita": "🇸🇦", "Uruguai": "🇺🇾",
-    "França": "🇫🇷", "Senegal": "🇸🇳", "Iraque": "🇮🇶", "Noruega": "🇳🇴",
-    "Argentina": "🇦🇷", "Argélia": "🇩🇿", "Áustria": "🇦🇹", "Jordânia": "🇯🇴",
-    "Portugal": "🇵🇹", "RD Congo": "🇨🇩", "Uzbequistão": "🇺🇿", "Colômbia": "🇨🇴",
-    "Inglaterra": "🏴󠁧󠁢󠁥󠁮󠁧󠁿", "Croácia": "🇭🇷", "Gana": "🇬🇭", "Panamá": "🇵🇦"
+    "México": "mx", "África do Sul": "za", "Coreia do Sul": "kr", "República Tcheca": "cz",
+    "Canadá": "ca", "Bósnia e Herzegovina": "ba", "Qatar": "qa", "Suíça": "ch",
+    "Brasil": "br", "Marrocos": "ma", "Haiti": "ht", "Escócia": "gb-sct",
+    "Estados Unidos": "us", "Paraguai": "py", "Austrália": "au", "Turquia": "tr",
+    "Alemanha": "de", "Curaçao": "cw", "Costa do Marfim": "ci", "Equador": "ec",
+    "Holanda": "nl", "Japão": "jp", "Suécia": "se", "Tunísia": "tn",
+    "Bélgica": "be", "Egito": "eg", "Irã": "ir", "Nova Zelândia": "nz",
+    "Espanha": "es", "Cabo Verde": "cv", "Arábia Saudita": "sa", "Uruguai": "uy",
+    "França": "fr", "Senegal": "sn", "Iraque": "iq", "Noruega": "no",
+    "Argentina": "ar", "Argélia": "dz", "Áustria": "at", "Jordânia": "jo",
+    "Portugal": "pt", "RD Congo": "cd", "Uzbequistão": "uz", "Colômbia": "co",
+    "Inglaterra": "gb-eng", "Croácia": "hr", "Gana": "gh", "Panamá": "pa"
 };
+
+function getFlagImg(teamName) {
+    const code = TEAM_FLAGS[teamName];
+    if (!code) return '<span class="flag">🏳️</span>';
+    return `<img class="flag-img" src="https://flagcdn.com/w40/${code}.png" alt="${teamName}" loading="lazy">`;
+}
 
 // Data limite para envio/alteração de palpites
 const DEADLINE = new Date("2026-06-10T23:59:59");

@@ -309,6 +309,15 @@ h2 {
     font-size: 1.3rem;
 }
 
+.flag-img {
+    width: 28px;
+    height: 20px;
+    object-fit: cover;
+    border-radius: 3px;
+    vertical-align: middle;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
 /* CÓDIGO DO USUÁRIO */
 .code-card {
     background: linear-gradient(135deg, rgba(46, 204, 113, 0.15), rgba(39, 174, 96, 0.1));

@@ -117,14 +117,11 @@ function renderMatchesForm(containerId, existingBets = {}, editable = true) {
             card.className = 'match-card';
 
             const bet = existingBets[match.id] || {};
-            const flag1 = TEAM_FLAGS[match.team1] || '🏳️';
-            const flag2 = TEAM_FLAGS[match.team2] || '🏳️';
-
             card.innerHTML = `
                 <div class="match-date">📅 ${formatDate(match.date)} | Jogo #${match.id}</div>
                 <div class="match-teams">
                     <span class="team-name team-left">${sanitize(match.team1)}</span>
-                    <span class="flag">${flag1}</span>
+                    ${getFlagImg(match.team1)}
                     <input type="number" class="score-input" data-match="${match.id}" data-team="1"
                            min="0" max="20" value="${bet.score1 !== undefined ? bet.score1 : 0}"
                            ${!editable ? 'disabled' : ''}>
@@ -132,7 +129,7 @@ function renderMatchesForm(containerId, existingBets = {}, editable = true) {
                     <input type="number" class="score-input" data-match="${match.id}" data-team="2"
                            min="0" max="20" value="${bet.score2 !== undefined ? bet.score2 : 0}"
                            ${!editable ? 'disabled' : ''}>
-                    <span class="flag">${flag2}</span>
+                    ${getFlagImg(match.team2)}
                     <span class="team-name team-right">${sanitize(match.team2)}</span>
                 </div>
             `;
@@ -294,9 +291,6 @@ function renderBetsWithResults(containerId, userBets, realResults) {
 
             const bet = userBets[match.id] || {};
             const real = realResults[match.id] || {};
-            const flag1 = TEAM_FLAGS[match.team1] || '🏳️';
-            const flag2 = TEAM_FLAGS[match.team2] || '🏳️';
-
             const hasReal = real.score1 !== undefined && real.score2 !== undefined;
             const hasBet = bet.score1 !== undefined && bet.score2 !== undefined;
             const pts = hasReal && hasBet ? calculatePoints(bet.score1, bet.score2, real.score1, real.score2) : null;
@@ -315,9 +309,9 @@ function renderBetsWithResults(containerId, userBets, realResults) {
                 <div class="match-date">📅 ${formatDate(match.date)} | Jogo #${match.id}</div>
                 <div class="match-teams">
                     <span class="team-name team-left">${sanitize(match.team1)}</span>
-                    <span class="flag">${flag1}</span>
+                    ${getFlagImg(match.team1)}
                     <span class="score-display">${betDisplay1} × ${betDisplay2}</span>
-                    <span class="flag">${flag2}</span>
+                    ${getFlagImg(match.team2)}
                     <span class="team-name team-right">${sanitize(match.team2)}</span>
                     ${pts !== null ? `<span class="match-points ${ptsClass}">${ptsDisplay}</span>` : ''}
                 </div>

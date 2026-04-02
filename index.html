@@ -26,9 +26,72 @@
     <main id="app">
         <!-- PÁGINA: CLASSIFICAÇÃO -->
         <section id="page-ranking" class="page active">
-            <h2>🏆 Classificação Geral</h2>
-            <div id="ranking-container">
-                <p class="loading">Carregando classificação...</p>
+            <div class="ranking-layout">
+                <div class="ranking-main">
+                    <h2>🏆 Classificação Geral</h2>
+                    <div id="ranking-container">
+                        <p class="loading">Carregando classificação...</p>
+                    </div>
+                </div>
+                <aside class="rules-panel">
+                    <h3>📜 Regras do Bolão</h3>
+                    <div class="rules-content">
+                        <div class="rule-item">
+                            <span class="rule-icon">🎯</span>
+                            <div>
+                                <strong>Placar Exato</strong>
+                                <p>Acertou o resultado exato do jogo</p>
+                                <span class="rule-pts pts-12">12 pontos</span>
+                            </div>
+                        </div>
+                        <div class="rule-item">
+                            <span class="rule-icon">✅</span>
+                            <div>
+                                <strong>Acertou o Vencedor</strong>
+                                <p>Acertou quem ganhou (ou empate)</p>
+                                <span class="rule-pts pts-3">3 pontos</span>
+                            </div>
+                        </div>
+                        <div class="rule-item">
+                            <span class="rule-icon">⚽</span>
+                            <div>
+                                <strong>Gols de um Time</strong>
+                                <p>Acertou o nº de gols de um time</p>
+                                <span class="rule-pts pts-3">3 pontos</span>
+                            </div>
+                        </div>
+
+                        <div class="rules-divider"></div>
+
+                        <h4>📌 Exemplos</h4>
+                        <p class="rules-example-title">Resultado real: <strong>Brasil 3 × 0 Canadá</strong></p>
+                        <table class="rules-examples-table">
+                            <tr><td>3 × 0</td><td class="pts-12">12 pts</td><td>Placar exato</td></tr>
+                            <tr><td>2 × 0</td><td class="pts-6">6 pts</td><td>Vencedor + gols Canadá</td></tr>
+                            <tr><td>2 × 1</td><td class="pts-3">3 pts</td><td>Só o vencedor</td></tr>
+                            <tr><td>0 × 0</td><td class="pts-3">3 pts</td><td>Gols do Canadá = 0</td></tr>
+                            <tr><td>3 × 3</td><td class="pts-3">3 pts</td><td>Gols do Brasil = 3</td></tr>
+                            <tr><td>1 × 1</td><td class="pts-0">0 pts</td><td>Errou tudo</td></tr>
+                        </table>
+
+                        <div class="rules-divider"></div>
+
+                        <div class="rules-notes">
+                            <p>⚠️ Placar exato <strong>não soma</strong> com outros bônus (máx. 12 pts por jogo).</p>
+                            <p>📅 Palpites podem ser alterados até <strong>10/06/2026</strong>.</p>
+                            <p>🔑 Ao criar seus palpites, você recebe um <strong>código de 6 caracteres</strong> para acessar e editar.</p>
+                        </div>
+
+                        <div class="rules-divider"></div>
+
+                        <h4>🏆 Premiação</h4>
+                        <div class="prize-list">
+                            <div class="prize-item gold">🥇 1º Lugar — <strong>60%</strong></div>
+                            <div class="prize-item silver">🥈 2º Lugar — <strong>30%</strong></div>
+                            <div class="prize-item bronze">🥉 3º Lugar — <strong>10%</strong></div>
+                        </div>
+                    </div>
+                </aside>
             </div>
         </section>
 

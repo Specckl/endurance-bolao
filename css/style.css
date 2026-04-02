@@ -72,7 +72,7 @@ nav {
 
 /* MAIN */
 main {
-    max-width: 900px;
+    max-width: 1200px;
     margin: 20px auto;
     padding: 0 15px;
 }
@@ -422,6 +422,24 @@ h2 {
     margin-top: 2px;
 }
 
+/* PRIZE LIST */
+.prize-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.prize-item {
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.prize-item.gold { border-left: 3px solid #f1c40f; }
+.prize-item.silver { border-left: 3px solid #bdc3c7; }
+.prize-item.bronze { border-left: 3px solid #e67e22; }
+
 /* TOAST */
 .toast {
     position: fixed;
@@ -477,4 +495,134 @@ footer {
     .ranking-table th, .ranking-table td { padding: 8px 6px; font-size: 0.8rem; }
     .code-display { font-size: 1.8rem; letter-spacing: 5px; }
     .user-info-card { flex-direction: column; text-align: center; }
+    .ranking-layout { flex-direction: column; }
+    .rules-panel { max-width: 100%; }
+}
+
+/* RANKING LAYOUT */
+.ranking-layout {
+    display: flex;
+    gap: 25px;
+    align-items: flex-start;
+}
+
+.ranking-main {
+    flex: 1;
+    min-width: 0;
+}
+
+/* PAINEL DE REGRAS */
+.rules-panel {
+    width: 320px;
+    min-width: 280px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 20px;
+    position: sticky;
+    top: 20px;
+}
+
+.rules-panel h3 {
+    color: #f39c12;
+    font-size: 1.1rem;
+    margin-bottom: 15px;
+    text-align: center;
+}
+
+.rules-panel h4 {
+    color: #e94560;
+    font-size: 0.95rem;
+    margin-bottom: 10px;
+}
+
+.rule-item {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    margin-bottom: 14px;
+    padding: 10px;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 8px;
+}
+
+.rule-icon {
+    font-size: 1.5rem;
+    flex-shrink: 0;
+}
+
+.rule-item strong {
+    display: block;
+    color: #fff;
+    font-size: 0.9rem;
+    margin-bottom: 2px;
+}
+
+.rule-item p {
+    color: #999;
+    font-size: 0.78rem;
+    margin-bottom: 4px;
+}
+
+.rule-pts {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 0.75rem;
+    font-weight: 700;
+}
+
+.rule-pts.pts-12 { background: #2ecc71; color: #000; }
+.rule-pts.pts-6 { background: #f39c12; color: #000; }
+.rule-pts.pts-3 { background: #e67e22; color: #fff; }
+.rule-pts.pts-0 { background: rgba(255, 255, 255, 0.1); color: #888; }
+
+.rules-divider {
+    height: 1px;
+    background: rgba(255, 255, 255, 0.1);
+    margin: 15px 0;
+}
+
+.rules-example-title {
+    color: #ccc;
+    font-size: 0.85rem;
+    margin-bottom: 8px;
+}
+
+.rules-examples-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.8rem;
+}
+
+.rules-examples-table td {
+    padding: 5px 6px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    color: #bbb;
+}
+
+.rules-examples-table td:first-child {
+    font-weight: 700;
+    color: #fff;
+    white-space: nowrap;
+}
+
+.rules-examples-table td:nth-child(2) {
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.rules-examples-table .pts-12 { color: #2ecc71; }
+.rules-examples-table .pts-6 { color: #f39c12; }
+.rules-examples-table .pts-3 { color: #e67e22; }
+.rules-examples-table .pts-0 { color: #888; }
+
+.rules-notes {
+    font-size: 0.78rem;
+    color: #999;
+}
+
+.rules-notes p {
+    margin-bottom: 6px;
+    line-height: 1.4;
 }

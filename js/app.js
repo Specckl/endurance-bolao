@@ -93,7 +93,7 @@ function calculatePoints(userScore1, userScore2, realScore1, realScore2) {
 }
 
 // ---- RENDERIZAR FORMULÁRIO DE JOGOS ----
-function renderMatchesForm(containerId, existingBets = {}, editable = true) {
+function renderMatchesForm(containerId, existingBets = {}, editable = true, isAdmin = false) {
     const container = document.getElementById(containerId);
     container.innerHTML = '';
 
@@ -117,18 +117,22 @@ function renderMatchesForm(containerId, existingBets = {}, editable = true) {
             card.className = 'match-card';
 
             const bet = existingBets[match.id] || {};
+            const defaultVal = isAdmin ? '' : 0;
+            const val1 = bet.score1 !== undefined ? bet.score1 : defaultVal;
+            const val2 = bet.score2 !== undefined ? bet.score2 : defaultVal;
+
             card.innerHTML = `
                 <div class="match-date">📅 ${formatDate(match.date)} | Jogo #${match.id}</div>
                 <div class="match-teams">
                     <span class="team-name team-left">${sanitize(match.team1)}</span>
                     ${getFlagImg(match.team1)}
                     <input type="number" class="score-input" data-match="${match.id}" data-team="1"
-                           min="0" max="20" value="${bet.score1 !== undefined ? bet.score1 : 0}"
-                           ${!editable ? 'disabled' : ''}>
+                           min="0" max="20" value="${val1}"
+                           placeholder="-" ${!editable ? 'disabled' : ''}>
                     <span class="score-separator">×</span>
                     <input type="number" class="score-input" data-match="${match.id}" data-team="2"
-                           min="0" max="20" value="${bet.score2 !== undefined ? bet.score2 : 0}"
-                           ${!editable ? 'disabled' : ''}>
+                           min="0" max="20" value="${val2}"
+                           placeholder="-" ${!editable ? 'disabled' : ''}>
                     ${getFlagImg(match.team2)}
                     <span class="team-name team-right">${sanitize(match.team2)}</span>
                 </div>
@@ -141,7 +145,7 @@ function renderMatchesForm(containerId, existingBets = {}, editable = true) {
     });
 }
 
-function collectBets(containerId) {
+function collectBets(containerId, onlyFilled = false) {
     const bets = {};
     const inputs = document.querySelectorAll(`#${containerId} .score-input`);
     inputs.forEach(input => {
@@ -149,8 +153,19 @@ function collectBets(containerId) {
         const team = input.dataset.team;
         if (!bets[matchId]) bets[matchId] = {};
         const val = input.value.trim();
-        bets[matchId][`score${team}`] = val !== '' ? parseInt(val) : 0;
+        if (val !== '') {
+            bets[matchId][`score${team}`] = parseInt(val);
+        } else if (!onlyFilled) {
+            bets[matchId][`score${team}`] = 0;
+        }
     });
+    if (onlyFilled) {
+        Object.keys(bets).forEach(id => {
+            if (bets[id].score1 === undefined || bets[id].score2 === undefined) {
+                delete bets[id];
+            }
+        });
+    }
     return bets;
 }
 
@@ -399,11 +414,11 @@ async function loadAdminPanel() {
     // Carregar resultados existentes
     const resultsDoc = await db.collection('config').doc('results').get();
     const existingResults = resultsDoc.exists ? resultsDoc.data().matches || {} : {};
-    renderMatchesForm('admin-matches-container', existingResults, true);
+    renderMatchesForm('admin-matches-container', existingResults, true, true);
 }
 
 document.getElementById('btn-save-results').addEventListener('click', async () => {
-    const results = collectBets('admin-matches-container');
+    const results = collectBets('admin-matches-container', true);
 
     try {
         await db.collection('config').doc('results').set({ matches: results });

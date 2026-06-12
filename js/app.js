@@ -15,6 +15,7 @@ document.querySelectorAll('.nav-btn').forEach(btn => {
 
         if (btn.dataset.page === 'ranking') loadRanking();
         if (btn.dataset.page === 'new-bet') renderNewBetForm();
+        if (btn.dataset.page === 'view-bet') loadParticipantsList();
     });
 });
 
@@ -230,50 +231,53 @@ document.getElementById('btn-save-bets').addEventListener('click', async () => {
     }
 });
 
-// ---- PÁGINA: VER/EDITAR PALPITES ----
-document.getElementById('btn-load-bets').addEventListener('click', async () => {
-    const code = document.getElementById('access-code').value.trim().toUpperCase();
-    if (code.length !== 6) {
-        showToast('O código deve ter 6 caracteres.', 'error');
+// ---- PÁGINA: VER RESULTADOS ----
+async function loadParticipantsList() {
+    const select = document.getElementById('access-code');
+    const currentValue = select.value;
+
+    try {
+        const snapshot = await db.collection('users').orderBy('name').get();
+        select.innerHTML = '<option value="">-- Escolha um participante --</option>';
+        snapshot.forEach(doc => {
+            const data = doc.data();
+            const option = document.createElement('option');
+            option.value = doc.id;
+            option.textContent = `${data.name} (${data.totalPoints || 0} pts)`;
+            select.appendChild(option);
+        });
+        if (currentValue) select.value = currentValue;
+    } catch (error) {
+        console.error('Erro ao carregar participantes:', error);
+        showToast('Erro ao carregar lista de participantes.', 'error');
+    }
+}
+
+document.getElementById('access-code').addEventListener('change', async (e) => {
+    const code = e.target.value;
+    const editContainer = document.getElementById('edit-container');
+
+    if (!code) {
+        editContainer.classList.add('hidden');
         return;
     }
 
     try {
         const doc = await db.collection('users').doc(code).get();
         if (!doc.exists) {
-            showToast('Código não encontrado!', 'error');
+            showToast('Participante não encontrado!', 'error');
             return;
         }
 
         const data = doc.data();
-        const editable = isBeforeDeadline();
-
-        document.getElementById('edit-container').classList.remove('hidden');
+        editContainer.classList.remove('hidden');
         document.getElementById('edit-user-name').textContent = `👤 ${data.name}`;
-        document.getElementById('edit-user-code').textContent = `🔑 ${data.code}`;
         document.getElementById('edit-user-points').textContent = `⭐ ${data.totalPoints || 0} pontos`;
 
-        // Carregar resultados reais para mostrar comparação
         const resultsDoc = await db.collection('config').doc('results').get();
         const realResults = resultsDoc.exists ? resultsDoc.data().matches || {} : {};
 
-        if (editable) {
-            renderMatchesForm('edit-matches-container', data.bets || {}, true);
-            document.getElementById('btn-update-bets').classList.remove('hidden');
-            document.getElementById('btn-update-bets').onclick = async () => {
-                const updatedBets = collectBets('edit-matches-container');
-                try {
-                    await db.collection('users').doc(code).update({ bets: updatedBets });
-                    showToast('Palpites atualizados!', 'success');
-                } catch (err) {
-                    console.error(err);
-                    showToast('Erro ao atualizar.', 'error');
-                }
-            };
-        } else {
-            document.getElementById('btn-update-bets').classList.add('hidden');
-            renderBetsWithResults('edit-matches-container', data.bets || {}, realResults);
-        }
+        renderBetsWithResults('edit-matches-container', data.bets || {}, realResults);
 
     } catch (error) {
         console.error('Erro:', error);
@@ -419,13 +423,21 @@ async function loadAdminPanel() {
 
 document.getElementById('btn-save-results').addEventListener('click', async () => {
     const results = collectBets('admin-matches-container', true);
+    
+    if (Object.keys(results).length === 0) {
+        showToast('Preencha pelo menos um resultado!', 'error');
+        return;
+    }
 
     try {
+        // Salvar resultados
         await db.collection('config').doc('results').set({ matches: results });
+        console.log('✓ Resultados salvos:', results);
 
         // Recalcular pontos de todos os usuários
         const usersSnapshot = await db.collection('users').get();
         const batch = db.batch();
+        let updateCount = 0;
 
         usersSnapshot.forEach(doc => {
             const userData = doc.data();
@@ -435,21 +447,26 @@ document.getElementById('btn-save-results').addEventListener('click', async () =
             MATCHES_DATA.forEach(match => {
                 const bet = userBets[match.id];
                 const real = results[match.id];
+                
                 if (bet && real && bet.score1 !== undefined && bet.score2 !== undefined &&
                     real.score1 !== undefined && real.score2 !== undefined) {
-                    totalPoints += calculatePoints(bet.score1, bet.score2, real.score1, real.score2);
+                    const points = calculatePoints(bet.score1, bet.score2, real.score1, real.score2);
+                    totalPoints += points;
                 }
             });
 
             batch.update(doc.ref, { totalPoints: totalPoints });
+            updateCount++;
+            console.log(`✓ ${userData.name}: ${totalPoints} pontos`);
         });
 
         await batch.commit();
-        showToast('Resultados salvos e pontuações recalculadas!', 'success');
+        console.log(`✓ ${updateCount} usuários atualizados`);
+        showToast(`Resultados salvos! ${updateCount} usuários recalculados!`, 'success');
 
     } catch (error) {
-        console.error('Erro ao salvar resultados:', error);
-        showToast('Erro ao salvar resultados.', 'error');
+        console.error('❌ Erro completo:', error);
+        showToast(`Erro: ${error.message}`, 'error');
     }
 });
 

@@ -19,7 +19,7 @@
     <nav id="main-nav">
         <button class="nav-btn active" data-page="ranking">🏆 Classificação</button>
         <button class="nav-btn" data-page="new-bet">📝 Criar Palpites</button>
-        <button class="nav-btn" data-page="view-bet">🔍 Ver/Editar Palpites</button>
+        <button class="nav-btn" data-page="view-bet">🔍 Ver Resultados</button>
         <button class="nav-btn" data-page="admin">⚙️ Admin</button>
     </nav>
 
@@ -119,24 +119,23 @@
             </div>
         </section>
 
-        <!-- PÁGINA: VER/EDITAR PALPITES -->
+        <!-- PÁGINA: VER RESULTADOS -->
         <section id="page-view-bet" class="page">
-            <h2>🔍 Ver / Editar Palpites</h2>
+            <h2>🔍 Ver Resultados dos Participantes</h2>
             <div id="login-form">
                 <div class="form-group">
-                    <label for="access-code">Código de Acesso (6 caracteres):</label>
-                    <input type="text" id="access-code" placeholder="Ex: A3B7K9" maxlength="6" style="text-transform: uppercase;">
+                    <label for="access-code">Selecione o participante:</label>
+                    <select id="access-code">
+                        <option value="">-- Escolha um participante --</option>
+                    </select>
                 </div>
-                <button id="btn-load-bets" class="btn-primary">🔓 Carregar Palpites</button>
             </div>
             <div id="edit-container" class="hidden">
                 <div class="user-info-card">
                     <span id="edit-user-name"></span>
-                    <span id="edit-user-code"></span>
                     <span id="edit-user-points"></span>
                 </div>
                 <div id="edit-matches-container"></div>
-                <button id="btn-update-bets" class="btn-primary hidden">💾 Atualizar Palpites</button>
             </div>
         </section>
 

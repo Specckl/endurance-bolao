@@ -20,6 +20,7 @@
         <button class="nav-btn active" data-page="ranking">🏆 Classificação</button>
         <button class="nav-btn" data-page="new-bet">📝 Criar Palpites</button>
         <button class="nav-btn" data-page="view-bet">🔍 Ver Resultados</button>
+        <button class="nav-btn" data-page="bracket">⚔️ Mata-mata</button>
         <button class="nav-btn" data-page="admin">⚙️ Admin</button>
     </nav>
 
@@ -139,6 +140,27 @@
             </div>
         </section>
 
+        <!-- PÁGINA: MATA-MATA (classificação por grupo + cruzamentos) -->
+        <section id="page-bracket" class="page">
+            <h2>⚔️ Caminho do Mata-mata</h2>
+            <div class="bracket-subnav">
+                <button class="bracket-subnav-btn active" data-subview="groups">📊 Grupos</button>
+                <button class="bracket-subnav-btn" data-subview="knockout">🏆 Mata-mata</button>
+            </div>
+            <div id="bracket-view-groups" class="bracket-view active">
+                <p class="info-text">Classificação dos grupos atualizada com base nos resultados postados pelo admin.</p>
+                <div id="bracket-groups-container">
+                    <p class="loading">Carregando classificação...</p>
+                </div>
+            </div>
+            <div id="bracket-view-knockout" class="bracket-view">
+                <p class="info-text">Cruzamentos atualizados automaticamente conforme os grupos vão sendo definidos. Times ainda não determinados aparecem como "Aguardando...".</p>
+                <div id="bracket-knockout-container">
+                    <p class="loading">Carregando cruzamentos...</p>
+                </div>
+            </div>
+        </section>
+
         <!-- PÁGINA: ADMIN (inserir resultados reais) -->
         <section id="page-admin" class="page">
             <h2>⚙️ Administração - Resultados Reais</h2>
@@ -169,5 +191,6 @@
     <script src="js/matches-data.js"></script>
     <script src="js/firebase-config.js"></script>
     <script src="js/app.js"></script>
+    <script src="js/bracket.js"></script>
 </body>
 </html>

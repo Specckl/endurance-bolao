@@ -16,6 +16,7 @@ document.querySelectorAll('.nav-btn').forEach(btn => {
         if (btn.dataset.page === 'ranking') loadRanking();
         if (btn.dataset.page === 'new-bet') renderNewBetForm();
         if (btn.dataset.page === 'view-bet') loadParticipantsList();
+        if (btn.dataset.page === 'bracket') loadBracketPage();
     });
 });
 

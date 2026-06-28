@@ -470,8 +470,8 @@ async function loadAdminKnockoutPanel() {
             section.appendChild(header);
 
             matches.forEach(match => {
-                const slot1 = resolveKnockoutSlot(match.slot1, standings, existingResults);
-                const slot2 = resolveKnockoutSlot(match.slot2, standings, existingResults);
+                const slot1 = resolveKnockoutSlot(match.slot1, standings, existingResults, match.id);
+                const slot2 = resolveKnockoutSlot(match.slot2, standings, existingResults, match.id);
                 const existing = existingResults[match.id] || {};
 
                 const row = document.createElement('div');

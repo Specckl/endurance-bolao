@@ -322,8 +322,8 @@ function renderPlayoffBetsForm(user) {
         section.appendChild(header);
 
         matches.forEach(match => {
-            const slot1 = resolveKnockoutSlot(match.slot1, _playoffCache.standings, _playoffCache.realResults);
-            const slot2 = resolveKnockoutSlot(match.slot2, _playoffCache.standings, _playoffCache.realResults);
+            const slot1 = resolveKnockoutSlot(match.slot1, _playoffCache.standings, _playoffCache.realResults, match.id);
+            const slot2 = resolveKnockoutSlot(match.slot2, _playoffCache.standings, _playoffCache.realResults, match.id);
             const teamsDefined = !!slot1.team && !!slot2.team;
             const locked = isMatchLocked(match);
             const existingBet = user.playoffBets[match.id] || {};

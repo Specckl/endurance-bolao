@@ -458,7 +458,9 @@ async function loadAdminKnockoutPanel() {
         ];
 
         rounds.forEach(({ round, label }) => {
-            const matches = getKnockoutMatchesByRound(round);
+            const matches = getKnockoutMatchesByRound(round)
+                .slice()
+                .sort((a, b) => new Date(a.kickoff) - new Date(b.kickoff));
             if (matches.length === 0) return;
 
             const section = document.createElement('div');
@@ -487,8 +489,16 @@ async function loadAdminKnockoutPanel() {
                 const isTie = s1 !== undefined && s1 !== null && s1 === s2;
                 const winner = existing.winner;
 
+                const dateStr = new Date(match.kickoff).toLocaleString('pt-BR', {
+                    weekday: 'short', day: '2-digit', month: '2-digit',
+                    hour: '2-digit', minute: '2-digit'
+                });
+
                 row.innerHTML = `
-                    <div class="admin-knockout-id">Jogo ${match.id}</div>
+                    <div class="admin-knockout-id">
+                        <div>Jogo ${match.id}</div>
+                        <div class="admin-knockout-date">${dateStr}</div>
+                    </div>
                     <div class="admin-knockout-teams">
                         <span class="t-name">${t1Label}</span>
                         ${t1Flag}

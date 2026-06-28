@@ -312,7 +312,9 @@ function renderPlayoffBetsForm(user) {
     let anyOpen = false;
 
     phases.forEach(({ round, label }) => {
-        const matches = getKnockoutMatchesByRound(round);
+        const matches = getKnockoutMatchesByRound(round)
+            .slice()
+            .sort((a, b) => new Date(a.kickoff) - new Date(b.kickoff));
         const section = document.createElement('div');
         section.className = 'playoff-phase';
 

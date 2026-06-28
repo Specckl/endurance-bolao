@@ -69,7 +69,7 @@ async function loadBracketPage() {
         const realResults = resultsDoc.exists ? (resultsDoc.data().matches || {}) : {};
         const standings = computeAllStandings(realResults);
         renderBracketGroups(groupsContainer, standings);
-        renderKnockoutBracket(knockoutContainer, standings);
+        renderKnockoutBracket(knockoutContainer, standings, realResults);
     } catch (error) {
         console.error('Erro ao carregar mata-mata:', error);
         groupsContainer.innerHTML = '<p class="loading">Erro ao carregar dados.</p>';
@@ -77,28 +77,7 @@ async function loadBracketPage() {
     }
 }
 
-function resolveSlot(slot, standings) {
-    const [type, value] = slot.split(':');
-    if (type === 'pos') {
-        const pos = parseInt(value[0]);
-        const group = value[1];
-        const teams = standings[group];
-        if (!teams || !teams[pos - 1]) return { team: null, label: `${value} — Aguardando` };
-        const team = teams[pos - 1];
-        const allPlayed = teams.every(t => t.played === 3);
-        if (!allPlayed) return { team: null, label: `${value} — Em definição` };
-        return { team: team.name, label: `${pos}º ${group}` };
-    }
-    if (type === '3rd') {
-        return { team: null, label: `3º de ${value.split(',').join('/')}` };
-    }
-    if (type === 'winner') {
-        return { team: null, label: `Vencedor jogo ${value}` };
-    }
-    return { team: null, label: '?' };
-}
-
-function renderKnockoutBracket(container, standings) {
+function renderKnockoutBracket(container, standings, realResults) {
     container.innerHTML = '';
     const bracket = document.createElement('div');
     bracket.className = 'knockout-bracket';
@@ -112,9 +91,14 @@ function renderKnockoutBracket(container, standings) {
         heading.textContent = ROUND_LABELS[round];
         column.appendChild(heading);
 
-        KNOCKOUT_BRACKET[round].forEach(match => {
-            const slot1 = resolveSlot(match.slot1, standings);
-            const slot2 = resolveSlot(match.slot2, standings);
+        // Ordena por horário do kickoff dentro da fase
+        const cupMatches = getKnockoutMatchesByRound(round)
+            .slice()
+            .sort((a, b) => new Date(a.kickoff) - new Date(b.kickoff));
+
+        cupMatches.forEach(match => {
+            const slot1 = resolveKnockoutSlot(match.slot1, standings, realResults, match.id);
+            const slot2 = resolveKnockoutSlot(match.slot2, standings, realResults, match.id);
             const matchEl = document.createElement('div');
             matchEl.className = 'knockout-match';
 
@@ -129,8 +113,13 @@ function renderKnockoutBracket(container, standings) {
                 </div>`;
             };
 
+            const dateStr = new Date(match.kickoff).toLocaleString('pt-BR', {
+                weekday: 'short', day: '2-digit', month: '2-digit',
+                hour: '2-digit', minute: '2-digit'
+            });
+
             matchEl.innerHTML = `
-                <div class="knockout-match-id">Jogo ${match.id}</div>
+                <div class="knockout-match-id">Jogo ${match.id} · ${dateStr}</div>
                 ${teamRow(slot1)}
                 <div class="knockout-vs">×</div>
                 ${teamRow(slot2)}

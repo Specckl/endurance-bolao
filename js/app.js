@@ -14,9 +14,9 @@ document.querySelectorAll('.nav-btn').forEach(btn => {
         document.getElementById(`page-${btn.dataset.page}`).classList.add('active');
 
         if (btn.dataset.page === 'ranking') loadRanking();
-        if (btn.dataset.page === 'new-bet') renderNewBetForm();
         if (btn.dataset.page === 'view-bet') loadParticipantsList();
         if (btn.dataset.page === 'bracket') loadBracketPage();
+        if (btn.dataset.page === 'playoff') loadPlayoffPage();
     });
 });
 
@@ -171,66 +171,6 @@ function collectBets(containerId, onlyFilled = false) {
     return bets;
 }
 
-// ---- PÁGINA: CRIAR PALPITES ----
-function renderNewBetForm() {
-    if (!isBeforeDeadline()) {
-        document.getElementById('deadline-warning').classList.remove('hidden');
-        document.getElementById('new-bet-form').classList.add('hidden');
-        return;
-    }
-    document.getElementById('deadline-warning').classList.add('hidden');
-    document.getElementById('new-bet-form').classList.remove('hidden');
-    document.getElementById('code-result').classList.add('hidden');
-    renderMatchesForm('matches-container', {}, true);
-}
-
-document.getElementById('btn-save-bets').addEventListener('click', async () => {
-    const name = document.getElementById('player-name').value.trim();
-    if (!name) {
-        showToast('Digite seu nome!', 'error');
-        return;
-    }
-    if (name.length < 2 || name.length > 50) {
-        showToast('Nome deve ter entre 2 e 50 caracteres.', 'error');
-        return;
-    }
-
-    if (!isBeforeDeadline()) {
-        showToast('Prazo encerrado!', 'error');
-        return;
-    }
-
-    const bets = collectBets('matches-container');
-
-    const code = generateCode();
-
-    try {
-        // Verificar se o código já existe
-        const existing = await db.collection('users').doc(code).get();
-        if (existing.exists) {
-            showToast('Erro raro: código duplicado. Tente novamente.', 'error');
-            return;
-        }
-
-        await db.collection('users').doc(code).set({
-            name: sanitize(name),
-            code: code,
-            bets: bets,
-            totalPoints: 0,
-            createdAt: firebase.firestore.FieldValue.serverTimestamp()
-        });
-
-        document.getElementById('new-bet-form').classList.add('hidden');
-        document.getElementById('code-result').classList.remove('hidden');
-        document.getElementById('user-code').textContent = code;
-
-        showToast('Palpites salvos com sucesso!', 'success');
-        alert('⚠️ ATENÇÃO: Você poderá alterar seus palpites somente até 10/06/2026. Após essa data, os palpites serão bloqueados.');
-    } catch (error) {
-        console.error('Erro ao salvar:', error);
-        showToast('Erro ao salvar. Tente novamente.', 'error');
-    }
-});
 
 // ---- PÁGINA: VER RESULTADOS ----
 async function loadParticipantsList() {
@@ -351,18 +291,29 @@ async function loadRanking() {
     container.innerHTML = '<p class="loading">Carregando...</p>';
 
     try {
-        const snapshot = await db.collection('users').orderBy('totalPoints', 'desc').get();
+        const [usersSnap, resultsDoc] = await Promise.all([
+            db.collection('users').get(),
+            db.collection('config').doc('results').get()
+        ]);
 
-        if (snapshot.empty) {
+        if (usersSnap.empty) {
             container.innerHTML = `
                 <div class="empty-state">
                     <div class="emoji">🏟️</div>
                     <p>Nenhum participante ainda.</p>
-                    <p>Seja o primeiro a criar seus palpites!</p>
                 </div>
             `;
             return;
         }
+
+        const realResults = resultsDoc.exists ? (resultsDoc.data().matches || {}) : {};
+        const users = [];
+        usersSnap.forEach(doc => {
+            const d = doc.data();
+            const stats = computeUserGroupStats({ bets: d.bets }, realResults);
+            users.push({ name: d.name || '?', ...stats });
+        });
+        users.sort(compareForRanking);
 
         let html = `
             <table class="ranking-table">
@@ -371,14 +322,15 @@ async function loadRanking() {
                         <th>#</th>
                         <th>Participante</th>
                         <th>Pontos</th>
+                        <th title="Placares exatos">🎯</th>
+                        <th title="Vencedores/empates">✅</th>
                     </tr>
                 </thead>
                 <tbody>
         `;
 
-        let rank = 1;
-        snapshot.forEach(doc => {
-            const data = doc.data();
+        users.forEach((u, i) => {
+            const rank = i + 1;
             let badgeClass = 'normal';
             if (rank === 1) badgeClass = 'gold';
             else if (rank === 2) badgeClass = 'silver';
@@ -387,11 +339,12 @@ async function loadRanking() {
             html += `
                 <tr>
                     <td><span class="rank-badge ${badgeClass}">${rank}</span></td>
-                    <td>${sanitize(data.name)}</td>
-                    <td class="points-cell">${data.totalPoints || 0}</td>
+                    <td>${sanitize(u.name)}</td>
+                    <td class="points-cell">${u.total}</td>
+                    <td class="tiebreak-cell">${u.exact}</td>
+                    <td class="tiebreak-cell">${u.winner}</td>
                 </tr>
             `;
-            rank++;
         });
 
         html += '</tbody></table>';
@@ -470,6 +423,267 @@ document.getElementById('btn-save-results').addEventListener('click', async () =
         showToast(`Erro: ${error.message}`, 'error');
     }
 });
+
+// ---- ADMIN: SUB-NAVEGAÇÃO ----
+document.querySelectorAll('.admin-subnav-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        const target = btn.dataset.subview;
+        document.querySelectorAll('.admin-subnav-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.admin-view').forEach(v => v.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById(`admin-view-${target}`).classList.add('active');
+        if (target === 'optout') loadAdminOptOutPanel();
+        if (target === 'knockout') loadAdminKnockoutPanel();
+    });
+});
+
+// ---- ADMIN: RESULTADOS DO MATA-MATA DA COPA ----
+async function loadAdminKnockoutPanel() {
+    const container = document.getElementById('admin-knockout-container');
+    container.innerHTML = '<p class="loading">Carregando jogos...</p>';
+
+    try {
+        const resultsDoc = await db.collection('config').doc('results').get();
+        const existingResults = resultsDoc.exists ? (resultsDoc.data().matches || {}) : {};
+        const standings = computeAllStandings(existingResults);
+
+        container.innerHTML = '';
+
+        const rounds = [
+            { round: 'r32',   label: '🎯 16-avos (Round of 32)' },
+            { round: 'r16',   label: '🏅 Oitavas' },
+            { round: 'qf',    label: '🥉 Quartas' },
+            { round: 'sf',    label: '🥈 Semifinais' },
+            { round: 'final', label: '🏆 Final' }
+        ];
+
+        rounds.forEach(({ round, label }) => {
+            const matches = getKnockoutMatchesByRound(round);
+            if (matches.length === 0) return;
+
+            const section = document.createElement('div');
+            section.className = 'admin-knockout-section';
+
+            const header = document.createElement('h4');
+            header.className = 'admin-knockout-header';
+            header.textContent = label;
+            section.appendChild(header);
+
+            matches.forEach(match => {
+                const slot1 = resolveKnockoutSlot(match.slot1, standings, existingResults);
+                const slot2 = resolveKnockoutSlot(match.slot2, standings, existingResults);
+                const existing = existingResults[match.id] || {};
+
+                const row = document.createElement('div');
+                row.className = 'admin-knockout-row';
+
+                const t1Label = slot1.team || slot1.label;
+                const t2Label = slot2.team || slot2.label;
+                const t1Flag = slot1.team ? getFlagImg(slot1.team) : '';
+                const t2Flag = slot2.team ? getFlagImg(slot2.team) : '';
+
+                const s1 = existing.score1;
+                const s2 = existing.score2;
+                const isTie = s1 !== undefined && s1 !== null && s1 === s2;
+                const winner = existing.winner;
+
+                row.innerHTML = `
+                    <div class="admin-knockout-id">Jogo ${match.id}</div>
+                    <div class="admin-knockout-teams">
+                        <span class="t-name">${t1Label}</span>
+                        ${t1Flag}
+                        <input type="number" min="0" max="20" class="admin-knockout-input"
+                               data-match-id="${match.id}" data-side="1"
+                               value="${s1 !== undefined && s1 !== null ? s1 : ''}">
+                        <span class="vs-x">×</span>
+                        <input type="number" min="0" max="20" class="admin-knockout-input"
+                               data-match-id="${match.id}" data-side="2"
+                               value="${s2 !== undefined && s2 !== null ? s2 : ''}">
+                        ${t2Flag}
+                        <span class="t-name">${t2Label}</span>
+                    </div>
+                    <div class="admin-knockout-pen ${isTie ? '' : 'hidden'}" data-match-id="${match.id}">
+                        <span class="pen-label">🏆 Pênaltis:</span>
+                        <button type="button" class="pen-btn ${winner === 1 ? 'active' : ''}"
+                                data-match-id="${match.id}" data-winner="1">${t1Label}</button>
+                        <button type="button" class="pen-btn ${winner === 2 ? 'active' : ''}"
+                                data-match-id="${match.id}" data-winner="2">${t2Label}</button>
+                    </div>
+                `;
+                section.appendChild(row);
+            });
+
+            container.appendChild(section);
+        });
+
+        // Listeners: mostrar/esconder seletor de pênaltis conforme placar
+        container.querySelectorAll('.admin-knockout-input').forEach(inp => {
+            inp.addEventListener('input', () => {
+                const mid = inp.dataset.matchId;
+                const inputs = container.querySelectorAll(`.admin-knockout-input[data-match-id="${mid}"]`);
+                const v1 = inputs[0].value.trim();
+                const v2 = inputs[1].value.trim();
+                const penBox = container.querySelector(`.admin-knockout-pen[data-match-id="${mid}"]`);
+                if (!penBox) return;
+                const isTie = v1 !== '' && v2 !== '' && parseInt(v1) === parseInt(v2);
+                if (isTie) {
+                    penBox.classList.remove('hidden');
+                } else {
+                    penBox.classList.add('hidden');
+                    // Limpar seleção quando não é mais empate
+                    penBox.querySelectorAll('.pen-btn').forEach(b => b.classList.remove('active'));
+                }
+            });
+        });
+
+        // Listeners: clique nos botões de pênaltis
+        container.querySelectorAll('.pen-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const mid = btn.dataset.matchId;
+                container.querySelectorAll(`.pen-btn[data-match-id="${mid}"]`)
+                    .forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+            });
+        });
+    } catch (error) {
+        console.error('Erro ao carregar mata-mata admin:', error);
+        container.innerHTML = '<p class="loading">Erro ao carregar.</p>';
+    }
+}
+
+document.getElementById('btn-save-knockout-results').addEventListener('click', async () => {
+    const container = document.getElementById('admin-knockout-container');
+    const inputs = container.querySelectorAll('.admin-knockout-input');
+    const newKnockout = {};
+
+    inputs.forEach(inp => {
+        const matchId = inp.dataset.matchId;
+        const side = inp.dataset.side;
+        const val = inp.value.trim();
+        if (val === '') return;
+        if (!newKnockout[matchId]) newKnockout[matchId] = {};
+        newKnockout[matchId][`score${side}`] = parseInt(val);
+    });
+
+    // Pegar vencedor por pênaltis quando aplicável
+    container.querySelectorAll('.pen-btn.active').forEach(btn => {
+        const mid = btn.dataset.matchId;
+        const w = parseInt(btn.dataset.winner);
+        if (newKnockout[mid]) newKnockout[mid].winner = w;
+    });
+
+    // Só persiste matches com ambos placares preenchidos.
+    // Se empate, exige vencedor por pênaltis selecionado.
+    const finalKnockout = {};
+    const tiedWithoutWinner = [];
+    Object.keys(newKnockout).forEach(mid => {
+        const b = newKnockout[mid];
+        if (b.score1 === undefined || b.score2 === undefined) return;
+        if (b.score1 === b.score2 && !b.winner) {
+            tiedWithoutWinner.push(mid);
+            return;
+        }
+        // Se não é empate, garante que winner não fique salvo de uma edição anterior
+        if (b.score1 !== b.score2) delete b.winner;
+        finalKnockout[mid] = b;
+    });
+
+    if (tiedWithoutWinner.length > 0) {
+        showToast(`Jogo(s) ${tiedWithoutWinner.join(', ')} empatado(s) — selecione o vencedor nos pênaltis.`, 'error');
+        return;
+    }
+
+    if (Object.keys(finalKnockout).length === 0) {
+        showToast('Preencha pelo menos um placar completo.', 'error');
+        return;
+    }
+
+    try {
+        const doc = await db.collection('config').doc('results').get();
+        const existing = doc.exists ? (doc.data().matches || {}) : {};
+        const merged = { ...existing, ...finalKnockout };
+
+        await db.collection('config').doc('results').set({ matches: merged });
+        showToast(`${Object.keys(finalKnockout).length} resultado(s) salvo(s)!`, 'success');
+        loadAdminKnockoutPanel();
+    } catch (error) {
+        console.error('Erro ao salvar mata-mata:', error);
+        showToast(`Erro: ${error.message}`, 'error');
+    }
+});
+
+// ---- ADMIN: OPT-OUT (esconder/exibir do mata-mata) ----
+async function loadAdminOptOutPanel() {
+    const container = document.getElementById('admin-optout-container');
+    container.innerHTML = '<p class="loading">Carregando participantes...</p>';
+
+    try {
+        const [usersSnap, playoffDoc] = await Promise.all([
+            db.collection('users').orderBy('totalPoints', 'desc').get(),
+            db.collection('config').doc('playoff').get()
+        ]);
+
+        const hidden = new Set(playoffDoc.exists ? (playoffDoc.data().hiddenUsers || []) : []);
+        const users = [];
+        usersSnap.forEach(doc => {
+            const d = doc.data();
+            users.push({ code: doc.id, name: d.name || '?', points: d.totalPoints || 0 });
+        });
+
+        container.innerHTML = '';
+        const list = document.createElement('div');
+        list.className = 'admin-optout-list';
+
+        const visibleUsers = users.filter(u => !hidden.has(u.code));
+
+        users.forEach((u) => {
+            const isHidden = hidden.has(u.code);
+            const visiblePos = visibleUsers.findIndex(v => v.code === u.code) + 1;
+            const inTop16 = !isHidden && visiblePos > 0 && visiblePos <= 16;
+
+            const row = document.createElement('div');
+            row.className = `admin-optout-row ${isHidden ? 'hidden-user' : ''}`;
+            row.innerHTML = `
+                <div class="admin-optout-info">
+                    <span class="admin-optout-pos">${isHidden ? '—' : visiblePos + 'º'}</span>
+                    <span class="admin-optout-name">${u.name}</span>
+                    <span class="admin-optout-pts">${u.points} pts</span>
+                    ${inTop16 ? '<span class="admin-optout-badge top16">TOP 16</span>' : ''}
+                    ${isHidden ? '<span class="admin-optout-badge hidden">ESCONDIDO</span>' : ''}
+                </div>
+                <button class="admin-optout-toggle ${isHidden ? 'show' : 'hide'}" data-code="${u.code}">
+                    ${isHidden ? '👁️ Exibir' : '🙈 Esconder'}
+                </button>
+            `;
+            list.appendChild(row);
+        });
+
+        container.appendChild(list);
+
+        container.querySelectorAll('.admin-optout-toggle').forEach(btn => {
+            btn.addEventListener('click', async () => {
+                const code = btn.dataset.code;
+                const newHidden = new Set(hidden);
+                if (newHidden.has(code)) newHidden.delete(code);
+                else newHidden.add(code);
+
+                try {
+                    await db.collection('config').doc('playoff').set({
+                        hiddenUsers: Array.from(newHidden)
+                    });
+                    showToast('Status atualizado!', 'success');
+                    loadAdminOptOutPanel();
+                } catch (err) {
+                    console.error('Erro ao atualizar opt-out:', err);
+                    showToast('Erro ao salvar.', 'error');
+                }
+            });
+        });
+    } catch (error) {
+        console.error('Erro ao carregar opt-out:', error);
+        container.innerHTML = '<p class="loading">Erro ao carregar participantes.</p>';
+    }
+}
 
 // ---- INICIALIZAÇÃO ----
 document.addEventListener('DOMContentLoaded', () => {

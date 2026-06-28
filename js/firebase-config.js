@@ -10,18 +10,20 @@
 // 5. Ative o Firestore Database no modo "Teste" (ou configure as regras abaixo)
 //
 // REGRAS DE SEGURANÇA DO FIRESTORE (cole na aba "Regras" do Firestore):
-// 
+//
 // rules_version = '2';
 // service cloud.firestore {
 //   match /databases/{database}/documents {
 //     match /users/{userId} {
 //       allow read: if true;
-//       allow create: if request.time < timestamp.date(2026, 6, 11);
-//       allow update: if request.time < timestamp.date(2026, 6, 11);
+//       allow create: if false;
+//       // Permite admin atualizar totalPoints e usuários atualizarem
+//       // seus palpites do mata-mata.
+//       allow update: if request.resource.data.diff(resource.data)
+//                       .affectedKeys().hasOnly(['totalPoints', 'playoffBets']);
 //     }
 //     match /config/{docId} {
-//       allow read: if true;
-//       allow write: if true;
+//       allow read, write: if true;
 //     }
 //   }
 // }

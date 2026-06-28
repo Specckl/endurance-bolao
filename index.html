@@ -18,7 +18,7 @@
 
     <nav id="main-nav">
         <button class="nav-btn active" data-page="ranking">🏆 Classificação</button>
-        <button class="nav-btn" data-page="new-bet">📝 Criar Palpites</button>
+        <button class="nav-btn" data-page="playoff">🎯 Oitavas de Final</button>
         <button class="nav-btn" data-page="view-bet">🔍 Ver Resultados</button>
         <button class="nav-btn" data-page="bracket">⚔️ Mata-mata</button>
         <button class="nav-btn" data-page="admin">⚙️ Admin</button>
@@ -96,29 +96,49 @@
             </div>
         </section>
 
-        <!-- PÁGINA: CRIAR PALPITES -->
-        <section id="page-new-bet" class="page">
-            <h2>📝 Criar Seus Palpites</h2>
-            <div id="deadline-warning" class="warning hidden">
-                ⚠️ O prazo para envio de palpites encerrou em 10/06/2026.
+        <!-- PÁGINA: OITAVAS DE FINAL DO BOLÃO -->
+        <section id="page-playoff" class="page">
+            <h2>🎯 Oitavas de Final do Bolão</h2>
+            <p class="info-text">Mata-mata entre os 16 melhores colocados. Confrontos: 1º × 16º, 2º × 15º, 3º × 14º... pelo chaveamento padrão (1º e 2º só se enfrentam na final).</p>
+            <div class="playoff-actions">
+                <button id="btn-open-playoff-bets" class="btn-primary">🔑 Dar Palpites do Mata-mata</button>
             </div>
-            <div id="new-bet-form">
-                <div class="form-group">
-                    <label for="player-name">Seu Nome:</label>
-                    <input type="text" id="player-name" placeholder="Digite seu nome" maxlength="50">
-                </div>
-                <div id="matches-container"></div>
-                <button id="btn-save-bets" class="btn-primary">💾 Salvar Palpites</button>
-            </div>
-            <div id="code-result" class="hidden">
-                <div class="code-card">
-                    <h3>✅ Palpites salvos com sucesso!</h3>
-                    <p>Seu código de acesso é:</p>
-                    <div class="code-display" id="user-code"></div>
-                    <p class="code-warning">⚠️ ANOTE ESTE CÓDIGO! Você precisará dele para ver ou alterar seus palpites.</p>
-                </div>
+            <div id="playoff-container">
+                <p class="loading">Carregando chaveamento...</p>
             </div>
         </section>
+
+        <!-- MODAL: PALPITES DO MATA-MATA -->
+        <div id="playoff-modal" class="modal hidden">
+            <div class="modal-overlay"></div>
+            <div class="modal-content">
+                <button class="modal-close" id="btn-close-playoff-modal">×</button>
+
+                <div id="playoff-modal-login">
+                    <h3>🔑 Digite seu código de acesso</h3>
+                    <p class="modal-subtitle">Aquele código de 6 caracteres que você recebeu ao criar seus palpites.</p>
+                    <div class="form-group">
+                        <input type="text" id="playoff-code-input" placeholder="Ex: A3B7K9" maxlength="6" style="text-transform: uppercase;">
+                    </div>
+                    <button id="btn-playoff-login" class="btn-primary">Entrar</button>
+                </div>
+
+                <div id="playoff-modal-eliminated" class="hidden">
+                    <div class="eliminated-card">
+                        <div class="eliminated-icon">😢</div>
+                        <h3>Lamento informar</h3>
+                        <p>Você está <strong>eliminado</strong> do mata-mata.</p>
+                        <p class="small">Apenas os 16 melhores colocados na fase de grupos se classificam.</p>
+                        <div id="eliminated-user-info"></div>
+                    </div>
+                </div>
+
+                <div id="playoff-modal-bets" class="hidden">
+                    <div class="playoff-user-card" id="playoff-user-card"></div>
+                    <div id="playoff-bets-container"></div>
+                </div>
+            </div>
+        </div>
 
         <!-- PÁGINA: VER RESULTADOS -->
         <section id="page-view-bet" class="page">
@@ -172,9 +192,32 @@
                 <button id="btn-admin-login" class="btn-primary">🔐 Entrar</button>
             </div>
             <div id="admin-panel" class="hidden">
-                <p class="info-text">Insira os resultados reais dos jogos para calcular a pontuação dos participantes.</p>
-                <div id="admin-matches-container"></div>
-                <button id="btn-save-results" class="btn-primary">💾 Salvar Resultados e Recalcular Pontos</button>
+                <div class="admin-subnav">
+                    <button class="admin-subnav-btn active" data-subview="results">📋 Fase de Grupos</button>
+                    <button class="admin-subnav-btn" data-subview="knockout">🏆 Mata-mata Copa</button>
+                    <button class="admin-subnav-btn" data-subview="optout">👥 Participantes do Bolão</button>
+                </div>
+
+                <div id="admin-view-results" class="admin-view active">
+                    <p class="info-text">Resultados dos jogos da fase de grupos (1-72).</p>
+                    <div id="admin-matches-container"></div>
+                    <button id="btn-save-results" class="btn-primary">💾 Salvar Resultados e Recalcular Pontos</button>
+                </div>
+
+                <div id="admin-view-knockout" class="admin-view">
+                    <p class="info-text">Resultados dos jogos do mata-mata da Copa (73-104). Times resolvidos automaticamente conforme você posta resultados das fases anteriores.</p>
+                    <div id="admin-knockout-container">
+                        <p class="loading">Carregando jogos...</p>
+                    </div>
+                    <button id="btn-save-knockout-results" class="btn-primary">💾 Salvar Resultados Mata-mata</button>
+                </div>
+
+                <div id="admin-view-optout" class="admin-view">
+                    <p class="info-text">Esconda participantes que não querem disputar o mata-mata. Quando escondidos, o próximo da fila ocupa a vaga.</p>
+                    <div id="admin-optout-container">
+                        <p class="loading">Carregando participantes...</p>
+                    </div>
+                </div>
             </div>
         </section>
     </main>
@@ -189,8 +232,11 @@
 
     <!-- App Scripts -->
     <script src="js/matches-data.js"></script>
+    <script src="js/knockout-data.js"></script>
+    <script src="js/scoring.js"></script>
     <script src="js/firebase-config.js"></script>
     <script src="js/app.js"></script>
     <script src="js/bracket.js"></script>
+    <script src="js/playoff.js"></script>
 </body>
 </html>

@@ -760,6 +760,24 @@ footer {
     font-size: 0.82rem;
 }
 
+.knockout-team.winner {
+    background: linear-gradient(90deg, rgba(212, 160, 23, 0.25), rgba(46, 160, 67, 0.15));
+    border-left: 3px solid #d4a017;
+    font-weight: 800;
+}
+
+.knockout-team.winner .playoff-name,
+.knockout-team.winner .playoff-pts {
+    color: #0d4d2e;
+}
+
+.tiebreak-cell {
+    text-align: center;
+    color: #c9d1e0;
+    font-weight: 600;
+    font-size: 0.85rem;
+}
+
 .knockout-team .flag-img {
     width: 22px;
     height: auto;
@@ -799,6 +817,570 @@ footer {
 
 .knockout-final .knockout-vs {
     color: rgba(255, 255, 255, 0.8);
+}
+
+.playoff-team {
+    gap: 10px;
+}
+
+.playoff-seed {
+    background: linear-gradient(135deg, #d4a017, #b8860b);
+    color: #fff;
+    font-weight: 800;
+    font-size: 0.75rem;
+    padding: 3px 7px;
+    border-radius: 5px;
+    min-width: 28px;
+    text-align: center;
+    flex-shrink: 0;
+}
+
+.playoff-name {
+    flex: 1;
+    font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.playoff-pts {
+    font-size: 0.78rem;
+    color: #1a7a4c;
+    font-weight: 700;
+    flex-shrink: 0;
+}
+
+.playoff-warning {
+    background: rgba(255, 193, 7, 0.1);
+    border: 1px solid #d4a017;
+    color: #fff;
+    padding: 16px;
+    border-radius: 10px;
+    margin-top: 16px;
+}
+
+.playoff-note {
+    margin-top: 22px;
+    background: rgba(255, 255, 255, 0.05);
+    border-left: 4px solid #d4a017;
+    padding: 14px 18px;
+    border-radius: 8px;
+    color: #d8e0ec;
+    font-size: 0.9rem;
+}
+
+.playoff-note strong {
+    color: #d4a017;
+    display: block;
+    margin-bottom: 8px;
+    font-size: 0.95rem;
+}
+
+.playoff-note ul {
+    margin: 0;
+    padding-left: 22px;
+    line-height: 1.7;
+}
+
+/* ============================================================
+   PLAYOFF - botão, modal, form de palpites e admin opt-out
+   ============================================================ */
+.playoff-actions {
+    margin: 20px 0;
+    text-align: center;
+}
+
+/* MODAL */
+.modal {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+}
+
+.modal.hidden { display: none; }
+
+.modal-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.75);
+    backdrop-filter: blur(4px);
+}
+
+.modal-content {
+    position: relative;
+    background: #fff;
+    color: #2c3e50;
+    border-radius: 14px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
+    max-width: 640px;
+    width: 100%;
+    max-height: 90vh;
+    overflow-y: auto;
+    padding: 30px 26px 26px 26px;
+}
+
+.modal-close {
+    position: absolute;
+    top: 10px;
+    right: 14px;
+    background: transparent;
+    border: none;
+    font-size: 2rem;
+    line-height: 1;
+    cursor: pointer;
+    color: #888;
+}
+
+.modal-close:hover { color: #e74c3c; }
+
+#playoff-modal-login h3,
+#playoff-modal-eliminated h3 {
+    color: #1a5490;
+    margin-bottom: 8px;
+}
+
+.modal-subtitle {
+    color: #666;
+    font-size: 0.9rem;
+    margin-bottom: 16px;
+}
+
+#playoff-code-input,
+.form-group #playoff-code-input {
+    width: 100%;
+    padding: 14px;
+    font-size: 1.4rem;
+    text-align: center;
+    letter-spacing: 6px;
+    font-weight: 700;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    background: #fff;
+    color: #2c3e50;
+}
+
+#playoff-code-input:focus {
+    border-color: #1a7a4c;
+    outline: none;
+    box-shadow: none;
+}
+
+/* ELIMINADO */
+.eliminated-card {
+    text-align: center;
+    padding: 20px 10px;
+}
+
+.eliminated-icon {
+    font-size: 4rem;
+    margin-bottom: 10px;
+}
+
+.eliminated-card h3 { color: #e74c3c; margin-bottom: 6px; }
+.eliminated-card p { color: #555; line-height: 1.5; margin-bottom: 6px; }
+.eliminated-card .small { color: #888; font-size: 0.85rem; }
+.eliminated-user-line {
+    margin-top: 18px;
+    padding: 14px;
+    background: #f5f7fa;
+    border-radius: 8px;
+}
+
+/* USER CARD DO PLAYOFF */
+.playoff-user-card {
+    background: linear-gradient(135deg, #1a7a4c, #d4a017);
+    color: #fff;
+    border-radius: 10px;
+    padding: 14px 18px;
+    margin-bottom: 20px;
+}
+
+.playoff-user-line {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 1.1rem;
+}
+
+.playoff-user-line .playoff-seed {
+    background: rgba(255, 255, 255, 0.25);
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-weight: 800;
+}
+
+.playoff-user-line .playoff-pts {
+    margin-left: auto;
+    font-weight: 600;
+}
+
+.playoff-user-card .small {
+    margin-top: 6px;
+    font-size: 0.85rem;
+    opacity: 0.9;
+}
+
+/* FORM DE PALPITES */
+.playoff-phase {
+    margin-bottom: 22px;
+    border: 1px solid #eaeef3;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.playoff-phase-title {
+    background: linear-gradient(90deg, #0d4d2e, #1a7a4c);
+    color: #fff;
+    margin: 0;
+    padding: 12px 16px;
+    font-size: 0.95rem;
+}
+
+.playoff-bet-match {
+    padding: 12px 14px;
+    border-bottom: 1px solid #f0f2f5;
+}
+
+.playoff-bet-match:last-child { border-bottom: none; }
+
+.playoff-bet-id {
+    font-size: 0.7rem;
+    color: #888;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 6px;
+    font-weight: 600;
+}
+
+.playoff-bet-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.92rem;
+    font-weight: 600;
+    flex-wrap: wrap;
+}
+
+.playoff-bet-row .team-name {
+    flex: 1;
+    min-width: 60px;
+}
+
+.playoff-bet-row .team-name:last-child { text-align: left; }
+.playoff-bet-row > .team-name:first-child { text-align: right; }
+
+.playoff-bet-row .flag-img {
+    width: 26px;
+    height: auto;
+    border-radius: 2px;
+}
+
+.playoff-bet-input {
+    width: 48px;
+    padding: 6px 4px;
+    text-align: center;
+    font-size: 1.1rem;
+    font-weight: 700;
+    border: 2px solid #ddd;
+    border-radius: 6px;
+    background: #fff;
+    color: #2c3e50;
+}
+
+.playoff-bet-input:focus {
+    border-color: #1a7a4c;
+    outline: none;
+    box-shadow: none;
+}
+
+.score-locked {
+    font-size: 1.3rem;
+    font-weight: 800;
+    color: #555;
+    padding: 4px 10px;
+    background: #f0f2f5;
+    border-radius: 6px;
+    min-width: 60px;
+    text-align: center;
+}
+
+.vs-x {
+    color: #888;
+    font-weight: 700;
+}
+
+.playoff-bet-status {
+    margin-top: 8px;
+    font-size: 0.78rem;
+    text-align: right;
+}
+
+.playoff-bet-status.pending { color: #d4a017; font-style: italic; }
+.playoff-bet-status.locked { color: #888; }
+.playoff-bet-status.open { color: #1a7a4c; font-weight: 600; }
+
+.playoff-save-btn {
+    width: 100%;
+    margin-top: 14px;
+    padding: 14px;
+    font-size: 1rem;
+}
+
+.playoff-save-btn:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+}
+
+/* ADMIN SUB-NAV */
+.admin-subnav {
+    display: flex;
+    gap: 8px;
+    margin: 12px 0 18px 0;
+    padding: 6px;
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 10px;
+    width: fit-content;
+}
+
+.admin-subnav-btn {
+    background: transparent;
+    color: #c9d1e0;
+    border: none;
+    padding: 9px 18px;
+    border-radius: 7px;
+    font-family: 'Poppins', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.admin-subnav-btn:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: #fff;
+}
+
+.admin-subnav-btn.active {
+    background: linear-gradient(135deg, #1a5490, #2d7dd2);
+    color: #fff;
+}
+
+.admin-view { display: none; }
+.admin-view.active { display: block; }
+
+/* ADMIN OPT-OUT */
+.admin-optout-list {
+    background: #fff;
+    color: #2c3e50;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.admin-optout-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    border-bottom: 1px solid #f0f2f5;
+    gap: 12px;
+}
+
+.admin-optout-row:last-child { border-bottom: none; }
+
+.admin-optout-row.hidden-user {
+    background: #f5f7fa;
+    opacity: 0.7;
+}
+
+.admin-optout-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex: 1;
+    flex-wrap: wrap;
+}
+
+.admin-optout-pos {
+    background: #2c3e50;
+    color: #fff;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-weight: 700;
+    font-size: 0.85rem;
+    min-width: 38px;
+    text-align: center;
+}
+
+.admin-optout-name {
+    font-weight: 600;
+    flex: 1;
+    min-width: 120px;
+}
+
+.admin-optout-pts {
+    color: #1a7a4c;
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.admin-optout-badge {
+    font-size: 0.7rem;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+}
+
+.admin-optout-badge.top16 {
+    background: linear-gradient(135deg, #d4a017, #f0c040);
+    color: #fff;
+}
+
+.admin-optout-badge.hidden {
+    background: #888;
+    color: #fff;
+}
+
+.admin-optout-toggle {
+    padding: 7px 14px;
+    border: none;
+    border-radius: 7px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 0.85rem;
+    transition: all 0.2s;
+}
+
+.admin-optout-toggle.hide {
+    background: #e67e22;
+    color: #fff;
+}
+
+.admin-optout-toggle.hide:hover { background: #d35400; }
+
+.admin-optout-toggle.show {
+    background: #1a7a4c;
+    color: #fff;
+}
+
+.admin-optout-toggle.show:hover { background: #145e3a; }
+
+/* ADMIN: RESULTADOS MATA-MATA */
+.admin-knockout-section {
+    margin-bottom: 22px;
+    background: #fff;
+    color: #2c3e50;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.admin-knockout-header {
+    background: linear-gradient(90deg, #0d4d2e, #1a7a4c);
+    color: #fff;
+    padding: 12px 16px;
+    margin: 0;
+    font-size: 0.95rem;
+}
+
+.admin-knockout-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 10px 14px;
+    border-bottom: 1px solid #f0f2f5;
+}
+
+.admin-knockout-row:last-child { border-bottom: none; }
+
+.admin-knockout-id {
+    font-size: 0.75rem;
+    color: #888;
+    font-weight: 700;
+    min-width: 64px;
+}
+
+.admin-knockout-teams {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 1;
+    flex-wrap: wrap;
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.admin-knockout-teams .t-name { flex: 1; min-width: 80px; }
+.admin-knockout-teams .t-name:first-of-type { text-align: right; }
+
+.admin-knockout-teams .flag-img {
+    width: 24px;
+    height: auto;
+    border-radius: 2px;
+}
+
+.admin-knockout-input {
+    width: 50px;
+    padding: 6px 4px;
+    text-align: center;
+    font-size: 1.1rem;
+    font-weight: 700;
+    border: 2px solid #ddd;
+    border-radius: 6px;
+    background: #fff;
+    color: #2c3e50;
+}
+
+.admin-knockout-input:focus {
+    border-color: #1a7a4c;
+    outline: none;
+    box-shadow: none;
+}
+
+.admin-knockout-pen {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-left: auto;
+    flex-shrink: 0;
+    flex-wrap: wrap;
+}
+
+.admin-knockout-pen.hidden { display: none; }
+
+.pen-label {
+    font-size: 0.82rem;
+    color: #d4a017;
+    font-weight: 700;
+}
+
+.pen-btn {
+    background: #f0f2f5;
+    color: #555;
+    border: 2px solid #ddd;
+    padding: 5px 11px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.82rem;
+    font-weight: 600;
+    transition: all 0.15s;
+    font-family: 'Poppins', sans-serif;
+}
+
+.pen-btn:hover {
+    background: #e8eaf0;
+    border-color: #d4a017;
+}
+
+.pen-btn.active {
+    background: linear-gradient(135deg, #d4a017, #f0c040);
+    color: #fff;
+    border-color: #d4a017;
 }
 
 .bracket-placeholder {

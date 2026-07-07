@@ -240,6 +240,105 @@ function closePlayoffModal() {
     document.getElementById('playoff-modal').classList.add('hidden');
 }
 
+const PHASE_LABELS = {
+    r16: 'Oitavas',
+    qf:  'Quartas',
+    sf:  'Semis',
+    final: 'Final'
+};
+
+// Determina onde o usuario esta na jornada do bolao.
+// Retorna: { inTop16, eliminated?, eliminatedAt?, lostTo?, myPoints?, oppPoints?, alive?, currentPhase?, champion?, user? }
+function getUserPlayoffStatus(userCode, top16, advancement) {
+    const user = top16.find(u => u.code === userCode);
+    if (!user) return { inTop16: false };
+
+    const order = ['r16', 'qf', 'sf', 'final'];
+    for (const phase of order) {
+        const phaseMatches = advancement[phase] || {};
+        let userMatch = null;
+        for (const mid of Object.keys(phaseMatches)) {
+            const m = phaseMatches[mid];
+            if (m.u1?.code === userCode || m.u2?.code === userCode) {
+                userMatch = m;
+                break;
+            }
+        }
+
+        if (!userMatch) {
+            // Ainda nao apareceu neste bracket (fase futura sem times definidos).
+            // Como chegamos aqui, ganhou as fases anteriores.
+            return { inTop16: true, alive: true, currentPhase: phase, user };
+        }
+
+        if (!userMatch.decided) {
+            return { inTop16: true, alive: true, currentPhase: phase, user, currentMatch: userMatch };
+        }
+
+        if (userMatch.winner?.code !== userCode) {
+            const isU1 = userMatch.u1.code === userCode;
+            return {
+                inTop16: true,
+                eliminated: true,
+                eliminatedAt: phase,
+                lostTo: isU1 ? userMatch.u2 : userMatch.u1,
+                myPoints: isU1 ? userMatch.p1 : userMatch.p2,
+                oppPoints: isU1 ? userMatch.p2 : userMatch.p1,
+                user
+            };
+        }
+        // Ganhou essa fase, segue pra proxima
+    }
+    return { inTop16: true, champion: true, user };
+}
+
+function showNotInTop16Message(user, code) {
+    const elim = document.getElementById('playoff-modal-eliminated');
+    document.getElementById('eliminated-icon').textContent = '😢';
+    document.getElementById('eliminated-title').textContent = 'Lamento informar';
+    document.getElementById('eliminated-message').innerHTML = 'Você está <strong>eliminado</strong> do mata-mata.';
+    document.getElementById('eliminated-small').textContent = 'Apenas os 16 melhores colocados na fase de grupos se classificam.';
+    const position = _playoffCache.ranked.findIndex(u => u.code === code) + 1;
+    const hidden = _playoffCache.hidden.has(code);
+    document.getElementById('eliminated-user-info').innerHTML = `
+        <div class="eliminated-user-line">
+            <strong>${user.name}</strong> — ${user.points} pts
+            ${hidden ? '<br><span class="small">Você optou por não participar do mata-mata.</span>'
+                     : `<br><span class="small">Posição atual: ${position}º (apenas top 16 avança)</span>`}
+        </div>
+    `;
+    elim.classList.remove('hidden');
+}
+
+function showEliminatedInPhase(status) {
+    const elim = document.getElementById('playoff-modal-eliminated');
+    document.getElementById('eliminated-icon').textContent = '😢';
+    document.getElementById('eliminated-title').textContent = 'Fim de jornada';
+    document.getElementById('eliminated-message').innerHTML =
+        `Você foi eliminado nas <strong>${PHASE_LABELS[status.eliminatedAt]} do Bolão</strong>.`;
+    document.getElementById('eliminated-small').textContent =
+        'Não é mais possível apostar. Obrigado por participar!';
+    document.getElementById('eliminated-user-info').innerHTML = `
+        <div class="eliminated-user-line">
+            <strong>${status.user.name}</strong>: <strong>${status.myPoints} pts</strong>
+            <br>
+            <span class="small">Perdeu para <strong>${status.lostTo.name}</strong> (${status.oppPoints} pts)</span>
+        </div>
+    `;
+    elim.classList.remove('hidden');
+}
+
+function showChampionMessage(status) {
+    const elim = document.getElementById('playoff-modal-eliminated');
+    document.getElementById('eliminated-icon').textContent = '🏆';
+    document.getElementById('eliminated-title').textContent = 'CAMPEÃO!';
+    document.getElementById('eliminated-message').innerHTML =
+        `Parabéns, <strong>${status.user.name}</strong>! Você venceu o bolão!`;
+    document.getElementById('eliminated-small').textContent = 'A vitória é sua. Aproveite.';
+    document.getElementById('eliminated-user-info').innerHTML = '';
+    elim.classList.remove('hidden');
+}
+
 async function handlePlayoffLogin() {
     const code = document.getElementById('playoff-code-input').value.trim().toUpperCase();
     if (code.length !== 6) {
@@ -247,67 +346,77 @@ async function handlePlayoffLogin() {
         return;
     }
 
-    // Buscar o usuario; se cache vazio, carrega tudo
     if (!_playoffCache.ranked.length) {
         await loadPlayoffPage();
     }
 
-    const user = _playoffCache.ranked.find(u => u.code === code);
-    if (!user) {
+    const rawUser = _playoffCache.ranked.find(u => u.code === code);
+    if (!rawUser) {
         showToast('Código não encontrado!', 'error');
         return;
     }
 
-    const isInTop16 = _playoffCache.top16.some(u => u.code === code);
-
     document.getElementById('playoff-modal-login').classList.add('hidden');
 
-    if (!isInTop16) {
-        const elimContainer = document.getElementById('playoff-modal-eliminated');
-        const userInfo = document.getElementById('eliminated-user-info');
-        const position = _playoffCache.ranked.findIndex(u => u.code === code) + 1;
-        const hidden = _playoffCache.hidden.has(code);
-        userInfo.innerHTML = `
-            <div class="eliminated-user-line">
-                <strong>${user.name}</strong> — ${user.points} pts
-                ${hidden ? '<br><span class="small">Você optou por não participar do mata-mata.</span>'
-                         : `<br><span class="small">Posição atual: ${position}º (apenas top 16 avança)</span>`}
-            </div>
-        `;
-        elimContainer.classList.remove('hidden');
+    // Caso 1: fora do top 16 (eliminado antes mesmo do mata-mata)
+    if (!_playoffCache.top16.some(u => u.code === code)) {
+        showNotInTop16Message(rawUser, code);
         return;
     }
 
-    renderPlayoffBetsForm(user);
+    // Caso 2/3/4: dentro do top 16 - verifica status na jornada
+    const status = getUserPlayoffStatus(code, _playoffCache.top16, _playoffCache.advancement || {});
+
+    if (status.eliminated) {
+        showEliminatedInPhase(status);
+        return;
+    }
+    if (status.champion) {
+        showChampionMessage(status);
+        return;
+    }
+
+    // Vivo — mostra form da fase atual
+    renderPlayoffBetsForm(rawUser, status.currentPhase);
 }
 
 // ============================================================
 // FORMULÁRIO DE PALPITES
 // ============================================================
-function renderPlayoffBetsForm(user) {
+function renderPlayoffBetsForm(user, phaseKey) {
     const container = document.getElementById('playoff-modal-bets');
     container.classList.remove('hidden');
 
     const seedIdx = _playoffCache.top16.findIndex(u => u.code === user.code) + 1;
+
+    const welcomeMap = {
+        r16:   'Você está nas Oitavas! Faça seus palpites abaixo.',
+        qf:    '🎉 Você avançou para as Quartas! Faça seus palpites abaixo.',
+        sf:    '🎉 Você chegou às Semis! Faça seus palpites abaixo.',
+        final: '🎉 Você chegou à FINAL! Faça seu palpite abaixo.'
+    };
+    const welcome = welcomeMap[phaseKey] || 'Faça seus palpites abaixo.';
+
     document.getElementById('playoff-user-card').innerHTML = `
         <div class="playoff-user-line">
             <span class="playoff-seed">${seedIdx}º</span>
             <strong>${user.name}</strong>
             <span class="playoff-pts">${user.points} pts</span>
         </div>
-        <p class="small">Você está classificado! Faça seus palpites abaixo.</p>
+        <p class="small">${welcome}</p>
     `;
 
     const betsContainer = document.getElementById('playoff-bets-container');
     betsContainer.innerHTML = '';
 
-    // Renderiza uma seção por fase do mata-mata da Copa (R16, QF, SF, Final)
-    const phases = [
+    // Renderiza APENAS a fase corrente do usuario
+    const allPhases = [
         { round: 'r16',   label: '🎯 Oitavas da Copa (decide bolão Oitavas)' },
         { round: 'qf',    label: '🏅 Quartas da Copa (decide bolão Quartas)' },
         { round: 'sf',    label: '🥈 Semifinais da Copa (decide bolão Semis)' },
         { round: 'final', label: '🏆 Final da Copa (decide bolão Final)' }
     ];
+    const phases = phaseKey ? allPhases.filter(p => p.round === phaseKey) : allPhases;
 
     let anyOpen = false;
 

@@ -93,6 +93,7 @@ const BOLAO_TO_CUP = {
     r16:   'r16',   // bolão oitavas usa Copa R16 (oitavas)
     qf:    'qf',    // bolão quartas usa Copa QF
     sf:    'sf',    // bolão semis usa Copa SF
+    tp:    'tp',    // bolão disputa 3o usa Copa 3o lugar (jogo 103)
     final: 'final'  // bolão final usa Copa Final
 };
 
@@ -100,7 +101,7 @@ const BOLAO_TO_CUP = {
 // top16: array de usuarios na ordem do seeding (top16[0] = 1º).
 // Retorna estrutura: { r16: { M1: {...}, ... }, qf: {...}, sf: {...}, final: {...} }
 function determinePlayoffAdvancement(top16, realResults) {
-    const result = { r16: {}, qf: {}, sf: {}, final: {} };
+    const result = { r16: {}, qf: {}, sf: {}, tp: {}, final: {} };
 
     const seedOf = (user) => {
         if (!user) return 999;
@@ -157,6 +158,20 @@ function determinePlayoffAdvancement(top16, realResults) {
             return;
         }
         result.sf[match.id] = decide(from1.winner, from2.winner, BOLAO_TO_CUP.sf, sfDone);
+    });
+
+    // Disputa 3o lugar — usa Copa jogo 103
+    const tpDone = isPhaseFullyPlayed(BOLAO_TO_CUP.tp, realResults);
+    (PLAYOFF_BRACKET.tp || []).forEach(match => {
+        const from1 = result.sf[match.fromLoser1];
+        const from2 = result.sf[match.fromLoser2];
+        if (!from1?.decided || !from2?.decided) {
+            result.tp[match.id] = { decided: false };
+            return;
+        }
+        const loser1 = from1.u1.code === from1.winner.code ? from1.u2 : from1.u1;
+        const loser2 = from2.u1.code === from2.winner.code ? from2.u2 : from2.u1;
+        result.tp[match.id] = decide(loser1, loser2, BOLAO_TO_CUP.tp, tpDone);
     });
 
     // Final — usa Copa Final

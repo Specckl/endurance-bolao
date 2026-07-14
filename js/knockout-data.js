@@ -46,6 +46,9 @@ const KNOCKOUT_MATCHES = [
     { id: 101, round: 'sf', kickoff: '2026-07-14T17:00:00-03:00', slot1: 'winner:97', slot2: 'winner:98' },
     { id: 102, round: 'sf', kickoff: '2026-07-15T17:00:00-03:00', slot1: 'winner:99', slot2: 'winner:100' },
 
+    // ===== 3o LUGAR =====
+    { id: 103, round: 'tp', kickoff: '2026-07-18T17:00:00-03:00', slot1: 'loser:101', slot2: 'loser:102' },
+
     // ===== FINAL =====
     { id: 104, round: 'final', kickoff: '2026-07-19T17:00:00-03:00', slot1: 'winner:101', slot2: 'winner:102' }
 ];
@@ -210,24 +213,26 @@ function resolveKnockoutSlot(slot, standings, realResults, matchId) {
         }
         return { team: null, label: `3º de ${value.split(',').join('/')}` };
     }
-    if (type === 'winner') {
-        const winMatchId = parseInt(value);
-        const r = realResults[winMatchId];
-        const m = KNOCKOUT_MATCHES.find(x => x.id === winMatchId);
-        if (!r || !m) return { team: null, label: `Vencedor ${winMatchId}` };
-        if (r.score1 === undefined || r.score2 === undefined) return { team: null, label: `Vencedor ${winMatchId}` };
+    if (type === 'winner' || type === 'loser') {
+        const refMatchId = parseInt(value);
+        const r = realResults[refMatchId];
+        const m = KNOCKOUT_MATCHES.find(x => x.id === refMatchId);
+        const label = type === 'winner' ? `Vencedor ${refMatchId}` : `Perdedor ${refMatchId}`;
+        if (!r || !m) return { team: null, label };
+        if (r.score1 === undefined || r.score2 === undefined) return { team: null, label };
         if (r.score1 === r.score2) {
-            if (r.winner === 1) {
-                const s1 = resolveKnockoutSlot(m.slot1, standings, realResults, winMatchId);
-                if (s1.team) return s1;
-            } else if (r.winner === 2) {
-                const s2 = resolveKnockoutSlot(m.slot2, standings, realResults, winMatchId);
-                if (s2.team) return s2;
-            }
-            return { team: null, label: `Vencedor ${winMatchId}` };
+            let winnerSide;
+            if (r.winner === 1 || r.winner === 2) winnerSide = r.winner;
+            else return { team: null, label };
+            // winner = winnerSide; loser = the other
+            const targetSide = (type === 'winner') ? winnerSide : (winnerSide === 1 ? 2 : 1);
+            const targetSlot = targetSide === 1 ? m.slot1 : m.slot2;
+            return resolveKnockoutSlot(targetSlot, standings, realResults, refMatchId);
         }
-        const winningSlot = r.score1 > r.score2 ? m.slot1 : m.slot2;
-        return resolveKnockoutSlot(winningSlot, standings, realResults, winMatchId);
+        const winnerSide = r.score1 > r.score2 ? 1 : 2;
+        const targetSide = (type === 'winner') ? winnerSide : (winnerSide === 1 ? 2 : 1);
+        const targetSlot = targetSide === 1 ? m.slot1 : m.slot2;
+        return resolveKnockoutSlot(targetSlot, standings, realResults, refMatchId);
     }
     return { team: null, label: '?' };
 }

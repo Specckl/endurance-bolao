@@ -55,6 +55,7 @@ const ROUND_LABELS = {
     r16: 'Oitavas de Final',
     qf: 'Quartas de Final',
     sf: 'Semifinais',
+    tp: 'Disputa 3º Lugar',
     final: 'Final'
 };
 
@@ -82,7 +83,7 @@ function renderKnockoutBracket(container, standings, realResults) {
     const bracket = document.createElement('div');
     bracket.className = 'knockout-bracket';
 
-    ['r32', 'r16', 'qf', 'sf', 'final'].forEach(round => {
+    ['r32', 'r16', 'qf', 'sf', 'tp', 'final'].forEach(round => {
         const column = document.createElement('div');
         column.className = `knockout-column knockout-${round}`;
 

@@ -26,6 +26,9 @@ const PLAYOFF_BRACKET = {
         { id: 'S1', from1: 'Q1', from2: 'Q2' },
         { id: 'S2', from1: 'Q3', from2: 'Q4' }
     ],
+    tp: [
+        { id: 'TP1', fromLoser1: 'S1', fromLoser2: 'S2' }
+    ],
     final: [
         { id: 'F1', from1: 'S1', from2: 'S2' }
     ]
@@ -35,6 +38,7 @@ const PLAYOFF_ROUND_LABELS = {
     r16: 'Oitavas de Final',
     qf: 'Quartas de Final',
     sf: 'Semifinais',
+    tp: 'Disputa 3º Lugar',
     final: 'Final'
 };
 
@@ -244,50 +248,99 @@ const PHASE_LABELS = {
     r16: 'Oitavas',
     qf:  'Quartas',
     sf:  'Semis',
+    tp:  'Disputa 3º Lugar',
     final: 'Final'
 };
 
+function findUserMatch(phaseMatches, userCode) {
+    for (const mid of Object.keys(phaseMatches)) {
+        const m = phaseMatches[mid];
+        if (m.u1?.code === userCode || m.u2?.code === userCode) return m;
+    }
+    return null;
+}
+
 // Determina onde o usuario esta na jornada do bolao.
-// Retorna: { inTop16, eliminated?, eliminatedAt?, lostTo?, myPoints?, oppPoints?, alive?, currentPhase?, champion?, user? }
 function getUserPlayoffStatus(userCode, top16, advancement) {
     const user = top16.find(u => u.code === userCode);
     if (!user) return { inTop16: false };
 
-    const order = ['r16', 'qf', 'sf', 'final'];
-    for (const phase of order) {
-        const phaseMatches = advancement[phase] || {};
-        let userMatch = null;
-        for (const mid of Object.keys(phaseMatches)) {
-            const m = phaseMatches[mid];
-            if (m.u1?.code === userCode || m.u2?.code === userCode) {
-                userMatch = m;
-                break;
-            }
-        }
+    // Percorre r16 -> qf -> sf; se ganhou, segue; se perdeu em sf, vai pra TP
+    for (const phase of ['r16', 'qf', 'sf']) {
+        const userMatch = findUserMatch(advancement[phase] || {}, userCode);
 
         if (!userMatch) {
-            // Ainda nao apareceu neste bracket (fase futura sem times definidos).
-            // Como chegamos aqui, ganhou as fases anteriores.
             return { inTop16: true, alive: true, currentPhase: phase, user };
         }
-
         if (!userMatch.decided) {
             return { inTop16: true, alive: true, currentPhase: phase, user, currentMatch: userMatch };
         }
-
         if (userMatch.winner?.code !== userCode) {
             const isU1 = userMatch.u1.code === userCode;
-            return {
-                inTop16: true,
-                eliminated: true,
-                eliminatedAt: phase,
+            const lossInfo = {
                 lostTo: isU1 ? userMatch.u2 : userMatch.u1,
                 myPoints: isU1 ? userMatch.p1 : userMatch.p2,
-                oppPoints: isU1 ? userMatch.p2 : userMatch.p1,
-                user
+                oppPoints: isU1 ? userMatch.p2 : userMatch.p1
+            };
+            if (phase === 'sf') {
+                // Perdeu SF -> vai pra disputa de 3o
+                return traceThirdPlace(userCode, advancement, user);
+            }
+            return {
+                inTop16: true, eliminated: true, eliminatedAt: phase,
+                user, ...lossInfo
             };
         }
-        // Ganhou essa fase, segue pra proxima
+        // Ganhou, continua
+    }
+
+    // Ganhou SF -> vai pra final
+    return traceFinal(userCode, advancement, user);
+}
+
+function traceThirdPlace(userCode, advancement, user) {
+    const tpMatch = findUserMatch(advancement.tp || {}, userCode);
+    if (!tpMatch) {
+        return { inTop16: true, alive: true, currentPhase: 'tp', user };
+    }
+    if (!tpMatch.decided) {
+        return { inTop16: true, alive: true, currentPhase: 'tp', user, currentMatch: tpMatch };
+    }
+    if (tpMatch.winner?.code !== userCode) {
+        const isU1 = tpMatch.u1.code === userCode;
+        return {
+            inTop16: true, fourthPlace: true, user,
+            lostTo: isU1 ? tpMatch.u2 : tpMatch.u1,
+            myPoints: isU1 ? tpMatch.p1 : tpMatch.p2,
+            oppPoints: isU1 ? tpMatch.p2 : tpMatch.p1
+        };
+    }
+    // Venceu a TP -> 3o lugar
+    const isU1 = tpMatch.u1.code === userCode;
+    return {
+        inTop16: true, thirdPlace: true, user,
+        beat: isU1 ? tpMatch.u2 : tpMatch.u1,
+        myPoints: isU1 ? tpMatch.p1 : tpMatch.p2,
+        oppPoints: isU1 ? tpMatch.p2 : tpMatch.p1
+    };
+}
+
+function traceFinal(userCode, advancement, user) {
+    const finalMatch = findUserMatch(advancement.final || {}, userCode);
+    if (!finalMatch) {
+        return { inTop16: true, alive: true, currentPhase: 'final', user };
+    }
+    if (!finalMatch.decided) {
+        return { inTop16: true, alive: true, currentPhase: 'final', user, currentMatch: finalMatch };
+    }
+    if (finalMatch.winner?.code !== userCode) {
+        const isU1 = finalMatch.u1.code === userCode;
+        return {
+            inTop16: true, secondPlace: true, user,
+            lostTo: isU1 ? finalMatch.u2 : finalMatch.u1,
+            myPoints: isU1 ? finalMatch.p1 : finalMatch.p2,
+            oppPoints: isU1 ? finalMatch.p2 : finalMatch.p1
+        };
     }
     return { inTop16: true, champion: true, user };
 }
@@ -334,8 +387,59 @@ function showChampionMessage(status) {
     document.getElementById('eliminated-title').textContent = 'CAMPEÃO!';
     document.getElementById('eliminated-message').innerHTML =
         `Parabéns, <strong>${status.user.name}</strong>! Você venceu o bolão!`;
-    document.getElementById('eliminated-small').textContent = 'A vitória é sua. Aproveite.';
+    document.getElementById('eliminated-small').textContent = 'Você levou o 1º lugar. Aproveite a premiação!';
     document.getElementById('eliminated-user-info').innerHTML = '';
+    elim.classList.remove('hidden');
+}
+
+function showSecondPlaceMessage(status) {
+    const elim = document.getElementById('playoff-modal-eliminated');
+    document.getElementById('eliminated-icon').textContent = '🥈';
+    document.getElementById('eliminated-title').textContent = 'Vice-campeão!';
+    document.getElementById('eliminated-message').innerHTML =
+        `Você chegou à final, <strong>${status.user.name}</strong>!`;
+    document.getElementById('eliminated-small').textContent = '2º lugar do bolão. Parabéns pela campanha!';
+    document.getElementById('eliminated-user-info').innerHTML = `
+        <div class="eliminated-user-line">
+            <strong>${status.user.name}</strong>: <strong>${status.myPoints} pts</strong> na final
+            <br>
+            <span class="small">Perdeu para <strong>${status.lostTo.name}</strong> (${status.oppPoints} pts)</span>
+        </div>
+    `;
+    elim.classList.remove('hidden');
+}
+
+function showThirdPlaceMessage(status) {
+    const elim = document.getElementById('playoff-modal-eliminated');
+    document.getElementById('eliminated-icon').textContent = '🥉';
+    document.getElementById('eliminated-title').textContent = '3º Lugar!';
+    document.getElementById('eliminated-message').innerHTML =
+        `Você garantiu o pódio, <strong>${status.user.name}</strong>!`;
+    document.getElementById('eliminated-small').textContent = 'Venceu a disputa do 3º lugar. Parabéns!';
+    document.getElementById('eliminated-user-info').innerHTML = `
+        <div class="eliminated-user-line">
+            <strong>${status.user.name}</strong>: <strong>${status.myPoints} pts</strong>
+            <br>
+            <span class="small">Venceu <strong>${status.beat.name}</strong> (${status.oppPoints} pts) na disputa do 3º</span>
+        </div>
+    `;
+    elim.classList.remove('hidden');
+}
+
+function showFourthPlaceMessage(status) {
+    const elim = document.getElementById('playoff-modal-eliminated');
+    document.getElementById('eliminated-icon').textContent = '😢';
+    document.getElementById('eliminated-title').textContent = '4º Lugar';
+    document.getElementById('eliminated-message').innerHTML =
+        `Você chegou perto do pódio, <strong>${status.user.name}</strong>.`;
+    document.getElementById('eliminated-small').textContent = 'Ficou em 4º na disputa do 3º lugar.';
+    document.getElementById('eliminated-user-info').innerHTML = `
+        <div class="eliminated-user-line">
+            <strong>${status.user.name}</strong>: <strong>${status.myPoints} pts</strong>
+            <br>
+            <span class="small">Perdeu para <strong>${status.lostTo.name}</strong> (${status.oppPoints} pts) na disputa do 3º</span>
+        </div>
+    `;
     elim.classList.remove('hidden');
 }
 
@@ -367,14 +471,11 @@ async function handlePlayoffLogin() {
     // Caso 2/3/4: dentro do top 16 - verifica status na jornada
     const status = getUserPlayoffStatus(code, _playoffCache.top16, _playoffCache.advancement || {});
 
-    if (status.eliminated) {
-        showEliminatedInPhase(status);
-        return;
-    }
-    if (status.champion) {
-        showChampionMessage(status);
-        return;
-    }
+    if (status.eliminated)    { showEliminatedInPhase(status); return; }
+    if (status.champion)      { showChampionMessage(status); return; }
+    if (status.secondPlace)   { showSecondPlaceMessage(status); return; }
+    if (status.thirdPlace)    { showThirdPlaceMessage(status); return; }
+    if (status.fourthPlace)   { showFourthPlaceMessage(status); return; }
 
     // Vivo — mostra form da fase atual
     renderPlayoffBetsForm(rawUser, status.currentPhase);
@@ -393,6 +494,7 @@ function renderPlayoffBetsForm(user, phaseKey) {
         r16:   'Você está nas Oitavas! Faça seus palpites abaixo.',
         qf:    '🎉 Você avançou para as Quartas! Faça seus palpites abaixo.',
         sf:    '🎉 Você chegou às Semis! Faça seus palpites abaixo.',
+        tp:    '🥉 Disputa do 3º lugar! Palpite abaixo — quem vencer fica com o bronze.',
         final: '🎉 Você chegou à FINAL! Faça seu palpite abaixo.'
     };
     const welcome = welcomeMap[phaseKey] || 'Faça seus palpites abaixo.';
@@ -414,6 +516,7 @@ function renderPlayoffBetsForm(user, phaseKey) {
         { round: 'r16',   label: '🎯 Oitavas da Copa (decide bolão Oitavas)' },
         { round: 'qf',    label: '🏅 Quartas da Copa (decide bolão Quartas)' },
         { round: 'sf',    label: '🥈 Semifinais da Copa (decide bolão Semis)' },
+        { round: 'tp',    label: '🥉 Jogo do 3º Lugar da Copa (decide 3º/4º do bolão)' },
         { round: 'final', label: '🏆 Final da Copa (decide bolão Final)' }
     ];
     const phases = phaseKey ? allPhases.filter(p => p.round === phaseKey) : allPhases;

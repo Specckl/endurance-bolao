@@ -454,6 +454,7 @@ async function loadAdminKnockoutPanel() {
             { round: 'r16',   label: '🏅 Oitavas' },
             { round: 'qf',    label: '🥉 Quartas' },
             { round: 'sf',    label: '🥈 Semifinais' },
+            { round: 'tp',    label: '🥉 Disputa 3º Lugar' },
             { round: 'final', label: '🏆 Final' }
         ];
 

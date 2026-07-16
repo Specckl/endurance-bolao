@@ -171,7 +171,7 @@ function renderPlayoffBracket(container, top16, advancement) {
     });
     bracket.appendChild(colR16);
 
-    // ---- Quartas, Semis, Final ----
+    // ---- Quartas, Semis, TP (disputa 3o), Final ----
     const renderRound = (round) => {
         const col = document.createElement('div');
         col.className = `knockout-column knockout-${round}`;
@@ -181,7 +181,7 @@ function renderPlayoffBracket(container, top16, advancement) {
         col.appendChild(title);
 
         PLAYOFF_BRACKET[round].forEach(match => {
-            const adv = advancement[round][match.id] || {};
+            const adv = (advancement[round] || {})[match.id] || {};
             const u1 = adv.u1;
             const u2 = adv.u2;
             const w = adv.winner;
@@ -189,12 +189,16 @@ function renderPlayoffBracket(container, top16, advancement) {
             const matchEl = document.createElement('div');
             matchEl.className = 'knockout-match';
 
+            const prefix = round === 'tp' ? 'Perdedor' : 'Vencedor';
+            const src1 = match.from1 || match.fromLoser1;
+            const src2 = match.from2 || match.fromLoser2;
+
             const slot1HTML = u1
                 ? teamLine(u1, seedOf(u1) + 'º', adv.p1, w && w.code === u1.code)
-                : pendingLine(`Vencedor ${match.from1}`);
+                : pendingLine(`${prefix} ${src1}`);
             const slot2HTML = u2
                 ? teamLine(u2, seedOf(u2) + 'º', adv.p2, w && w.code === u2.code)
-                : pendingLine(`Vencedor ${match.from2}`);
+                : pendingLine(`${prefix} ${src2}`);
 
             matchEl.innerHTML = `
                 <div class="knockout-match-id">${match.id}</div>
@@ -209,6 +213,7 @@ function renderPlayoffBracket(container, top16, advancement) {
 
     renderRound('qf');
     renderRound('sf');
+    renderRound('tp');
     renderRound('final');
 
     container.appendChild(bracket);
